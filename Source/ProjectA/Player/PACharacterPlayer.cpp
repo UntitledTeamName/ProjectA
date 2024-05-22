@@ -43,6 +43,14 @@ APACharacterPlayer::APACharacterPlayer()
 		LookAction = InputActionLookRef.Object;
 	}
 
+	static ConstructorHelpers::FObjectFinder<UInputAction> CrouchActionRef(TEXT("/Script/EnhancedInput.InputAction'/Game/ProjectA/Input/Actions/IA_Crouch.IA_Crouch'"));
+	if (nullptr != CrouchActionRef.Object)
+	{
+		CrouchAction = CrouchActionRef.Object;
+	}
+
+
+
 	static ConstructorHelpers::FObjectFinder<UPACharacterControlData> ThirdPersonDataRef(TEXT("/Script/ProjectA.PACharacterControlData'/Game/ProjectA/CharacterControl/PAC_ThirdPerson.PAC_ThirdPerson'"));
 	if (ThirdPersonDataRef.Object)
 	{
@@ -80,6 +88,10 @@ void APACharacterPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 	EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
 	EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &APACharacterPlayer::Move);
 	EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &APACharacterPlayer::Look);
+	EnhancedInputComponent->BindAction(CrouchAction, ETriggerEvent::Triggered, this, &APACharacterPlayer::StartCrouch);
+	EnhancedInputComponent->BindAction(CrouchAction, ETriggerEvent::Completed, this, &APACharacterPlayer::StopCrouch);
+	
+
 
 }
 
@@ -136,7 +148,6 @@ void APACharacterPlayer::Move(const FInputActionValue& Value)
 	AddMovementInput(ForwardDirection, MovementVector.X);
 	AddMovementInput(RightDirection, MovementVector.Y);
 
-	UE_LOG(LogTemp, Log, TEXT("MOVE"));
 }
 
 
@@ -156,7 +167,23 @@ void APACharacterPlayer::Look(const FInputActionValue& Value)
 	SetActorRotation(NewRotation);
 
 
-	UE_LOG(LogTemp, Log, TEXT("LOOK"));
 }
+
+void APACharacterPlayer::StartCrouch(const FInputActionValue& Value)
+{
+	Crouch();
+	UE_LOG(LogTemp, Log, TEXT("Crouched"));
+
+}
+
+void APACharacterPlayer::StopCrouch(const FInputActionValue& Value)
+{
+	UnCrouch();
+
+	UE_LOG(LogTemp, Log, TEXT("UnCrouched"));
+}
+
+
+
 
 

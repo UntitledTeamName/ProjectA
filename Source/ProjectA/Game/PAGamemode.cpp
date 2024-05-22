@@ -10,7 +10,7 @@ APAGamemode::APAGamemode()
 	{
 		DefaultPawnClass = DefaultPawnClassRef.Class;
 	}
-
+	
 
 	static ConstructorHelpers::FClassFinder<APlayerController> PlayerControllerClassRef(TEXT("/Script/CoreUObject.Class'/Script/ProjectA.PAPlayerController'"));
 	if (PlayerControllerClassRef.Class)

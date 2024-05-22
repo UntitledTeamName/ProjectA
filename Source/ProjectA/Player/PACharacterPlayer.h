@@ -55,8 +55,14 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, Meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UInputAction> LookAction;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, Meta = (AllowPrivateAccess = "true"))
+
+	TObjectPtr<class UInputAction> CrouchAction;
+
 	void Move(const FInputActionValue& Value);
 	void Look(const FInputActionValue& Value);
+	void StartCrouch(const FInputActionValue& Value);
+	void StopCrouch(const FInputActionValue& Value);
 
 
 	ECharacterControlType CurrentCharacterControlType;
@@ -64,6 +70,9 @@ protected:
 	float PreviousStareTime = 0.0f;
 
 	float NextStareTime = 0.0f;
+
+
+
 
 	
 };
