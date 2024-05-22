@@ -6,6 +6,14 @@
 #include "GameFramework/Character.h"
 #include "PACharacterBase.generated.h"
 
+UENUM()
+enum class ECharacterControlType : uint8
+{
+	ThirdPerson,
+	FirstPerson
+};
+
+
 UCLASS()
 class PROJECTA_API APACharacterBase : public ACharacter
 {
@@ -23,7 +31,12 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-	// Called to bind functionality to input
-	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+protected:
+	virtual void SetCharacterControlData(const class UPACharacterControlData* CharacterControlData);
+
+
+	UPROPERTY(EditAnywhere, Category = CharacterControl, Meta = (AllowPrivateAccess = "true"))
+
+	TMap<ECharacterControlType, class UPACharacterControlData*> CharacterControlManager;
 
 };

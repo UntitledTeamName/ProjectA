@@ -3,3 +3,11 @@
 
 #include "Player/PAPlayerController.h"
 
+void APAPlayerController::BeginPlay()
+{
+
+	Super::BeginPlay();
+
+	FInputModeGameOnly GameOnlyInputMode;
+	SetInputMode(GameOnlyInputMode);
+}
