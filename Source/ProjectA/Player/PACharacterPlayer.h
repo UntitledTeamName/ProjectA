@@ -61,5 +61,9 @@ protected:
 
 	ECharacterControlType CurrentCharacterControlType;
 
+	float PreviousStareTime = 0.0f;
+
+	float NextStareTime = 0.0f;
+
 	
 };

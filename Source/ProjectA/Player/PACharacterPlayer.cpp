@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+ï»¿// Fill out your copyright notice in the Description page of Project Settings.
 
 
 #include "Player/PACharacterPlayer.h"
@@ -15,13 +15,13 @@ APACharacterPlayer::APACharacterPlayer()
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->SetupAttachment(RootComponent);
 	CameraBoom->TargetArmLength = 400.0f;
-	// ÄÁÆ®·Ñ·¯¿Í Ä«¸Þ¶óºÕ È¸Àü µ¿±âÈ­ 
+	// ì»¨íŠ¸ë¡¤ëŸ¬ì™€ ì¹´ë©”ë¼ë¶ íšŒì „ ë™ê¸°í™” 
 	CameraBoom->bUsePawnControlRotation = true;
 
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
-	// ÄÁÆ®·Ñ·¯¿Í Ä«¸Þ¶ó È¸Àü µ¿±âÈ­ (1ÀÎÄª¿¡ »ç¿ë ¿¹Á¤)
-	FollowCamera->bUsePawnControlRotation = false;
+	// ì»¨íŠ¸ë¡¤ëŸ¬ì™€ ì¹´ë©”ë¼ íšŒì „ ë™ê¸°í™”
+	FollowCamera->bUsePawnControlRotation = true;
 
 
 	// Input
@@ -75,7 +75,7 @@ void APACharacterPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 	UEnhancedInputComponent* EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(PlayerInputComponent);
 	
 
-	// ÀÎÇ² ¾×¼Ç ¹ÙÀÎµù
+	// ì¸í’‹ ì•¡ì…˜ ë°”ì¸ë”©
 	EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Triggered, this, &ACharacter::Jump);
 	EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
 	EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &APACharacterPlayer::Move);
@@ -122,9 +122,9 @@ void APACharacterPlayer::Move(const FInputActionValue& Value)
 {
 	FVector2D MovementVector = Value.Get<FVector2D>();
 
-	/* 
-	ÄÁÆ®·Ñ·¯ÀÇ È¸Àü °ªÀ» °¡Á®¿Í¼­ ÀÖÀ¸¸é È¸Àü½ÃÄÑÁØ´Ù.
-	Ä³¸¯ÅÍ°¡ ¹Ù¶óº¸´Â ¹æÇâÀ¸·Î ÀüÁøÇÒ ¼ö ÀÖ°Ô ÇØÁÜ 
+	/*
+	ì»¨íŠ¸ë¡¤ëŸ¬ì˜ íšŒì „ ê°’ì„ ê°€ì ¸ì™€ì„œ ìžˆìœ¼ë©´ íšŒì „ì‹œì¼œì¤€ë‹¤.
+	ìºë¦­í„°ê°€ ë°”ë¼ë³´ëŠ” ë°©í–¥ìœ¼ë¡œ ì „ì§„í•  ìˆ˜ ìžˆê²Œ í•´ì¤Œ
 	*/
 	const FRotator Rotation = Controller->GetControlRotation();
 	const FRotator YawRotation(0, Rotation.Yaw, 0);
@@ -139,15 +139,22 @@ void APACharacterPlayer::Move(const FInputActionValue& Value)
 	UE_LOG(LogTemp, Log, TEXT("MOVE"));
 }
 
+
 void APACharacterPlayer::Look(const FInputActionValue& Value)
 {
 	FVector2D LookAxisVector = Value.Get<FVector2D>();
 
 	AddControllerYawInput(LookAxisVector.X);
 	
-	/* YÃà »óÇÏ¹ÝÀüÇÏ±â À§ÇØ ³×°ÅÆ¼ºê Ã³¸® */
+	/* Yì¶• ìƒí•˜ë°˜ì „í•˜ê¸° ìœ„í•´ ë„¤ê±°í‹°ë¸Œ ì²˜ë¦¬ */
 	AddControllerPitchInput(-LookAxisVector.Y);
-	
+
+
+	// ìºë¦­í„°ì˜ íšŒì „ ë™ê¸°í™”
+	FRotator NewRotation = GetActorRotation();
+	NewRotation.Yaw = Controller->GetControlRotation().Yaw;
+	SetActorRotation(NewRotation);
+
 
 	UE_LOG(LogTemp, Log, TEXT("LOOK"));
 }
