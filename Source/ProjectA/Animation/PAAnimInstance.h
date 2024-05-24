@@ -17,6 +17,11 @@ class PROJECTA_API UPAAnimInstance : public UAnimInstance
 public:
 	UPAAnimInstance();
 
+	bool GetbIsRunning() { return bIsRunning; };
+	void SetbIsRunning(bool NewValue) {
+		bIsRunning = NewValue;
+	}
+
 protected:
 
 	virtual void NativeInitializeAnimation() override;
@@ -44,6 +49,10 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Chracter)
 	bool bCrouching;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Chracter)
+	bool bIsRunning;
+
 
 	
 

@@ -10,6 +10,7 @@
 #include "Character/PACharacterControlData.h"
 #include "EnhancedInputComponent.h"
 #include "Components/WidgetComponent.h"
+#include "Animation/PAAnimInstance.h"
 #include "EnhancedInputSubsystems.h"
 #include "Net/UnrealNetwork.h"
 
@@ -105,7 +106,11 @@ void APACharacterPlayer::BeginPlay()
 void APACharacterPlayer::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	if(!bIsCrouched)
 	UpdateStamina();
+
+	
 }
 
 void APACharacterPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -179,6 +184,7 @@ void APACharacterPlayer::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& O
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	
 	DOREPLIFETIME(APACharacterPlayer, bIsRunning);
+	DOREPLIFETIME(APACharacterPlayer, CurrentStamina);
 
 }
 
@@ -224,75 +230,112 @@ void APACharacterPlayer::Look(const FInputActionValue& Value)
 void APACharacterPlayer::StartCrouch(const FInputActionValue& Value)
 {
 	Crouch();
+	bIsCrouched = true;
 }
 
 void APACharacterPlayer::StopCrouch(const FInputActionValue& Value)
 {
 	UnCrouch();
+	bIsCrouched = false;
+}
 
+void APACharacterPlayer::OnRep_IsRunning()
+{
+	// This function will be called on clients when bIsRunning is updated on the server
+	// Update character movement or animation states here
+	
+	
 }
 
 void APACharacterPlayer::StartSprint(const FInputActionValue& Value)
 {
-	if (bHasStamina)
+	if (HasAuthority())
 	{
-		GetCharacterMovement()->MaxWalkSpeed = Stat->GetRunSpeed();
-		if (GetVelocity().Size() >= 0.5)
+		// Server logic
+		if (bHasStamina)
 		{
+			GetCharacterMovement()->MaxWalkSpeed = Stat->GetRunSpeed();
 			bIsRunning = true;
 		}
-		else
-		{
-			bIsRunning = false;
-		}
-	
+	}
+	else
+	{
+		// Client logic
+		GetCharacterMovement()->MaxWalkSpeed = Stat->GetRunSpeed();
+		bIsRunning = true;
+		ServerStartSprint(Value);
 		
 	}
-
-
-
-
-	
 }
 
 void APACharacterPlayer::StopSprint(const FInputActionValue& Value)
 {
-	GetCharacterMovement()->MaxWalkSpeed = Stat->GetWalkSpeed();
-	bIsRunning = false;
+	if (HasAuthority())
+	{
+		// Server logic
+		GetCharacterMovement()->MaxWalkSpeed = Stat->GetWalkSpeed();
+		bIsRunning = false;
+	}
+	else
+	{
+		// Client logic
+		GetCharacterMovement()->MaxWalkSpeed = Stat->GetWalkSpeed();
+		bIsRunning = false;
+		ServerStopSprint(Value);
+		
+	}
 }
 
 void APACharacterPlayer::UpdateStamina()
 {
-	// Drain Stamina
-	if (bIsRunning)
+	if (HasAuthority())
 	{
-		CurrentStamina -= StaminaDrainTime;
-		CurrentRefillDelayTime = DelayBeforeRefill;
-	}
-
-	if (!bIsRunning && CurrentStamina < MaxStamina)
-	{
-		CurrentRefillDelayTime--;
-		if (CurrentRefillDelayTime <= KINDA_SMALL_NUMBER)
+		if (bIsRunning)
 		{
-			CurrentStamina += StaminaRefillTime;
+			CurrentStamina -= StaminaDrainTime;
+			CurrentRefillDelayTime = DelayBeforeRefill;
+		}
+
+		if (!bIsRunning && CurrentStamina < MaxStamina)
+		{
+			CurrentRefillDelayTime--;
+			if (CurrentRefillDelayTime <= KINDA_SMALL_NUMBER)
+			{
+				CurrentStamina += StaminaRefillTime;
+			}
+		}
+
+		if (CurrentStamina <= KINDA_SMALL_NUMBER)
+		{
+			bHasStamina = false;
+			StopSprint(0.0f);
+		}
+		else
+		{
+			bHasStamina = true;
 		}
 	}
-
-	if (CurrentStamina <= KINDA_SMALL_NUMBER)
-	{
-		bHasStamina = false;
-		StopSprint(0.0f);
-	}
-	else 
-	{
-		bHasStamina = true;
-	}
-	
-
 }
 
 
+void APACharacterPlayer::ServerStartSprint_Implementation(const FInputActionValue& Value)
+{
+	StartSprint(Value);
+	
+}
 
+bool APACharacterPlayer::ServerStartSprint_Validate(const FInputActionValue& Value)
+{
+	return true;
+}
 
+void APACharacterPlayer::ServerStopSprint_Implementation(const FInputActionValue& Value)
+{
+	StopSprint(Value);
 
+}
+
+bool APACharacterPlayer::ServerStopSprint_Validate(const FInputActionValue& Value)
+{
+	return true;
+}

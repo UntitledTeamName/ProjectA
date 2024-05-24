@@ -34,8 +34,9 @@ void UPAAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 		bCrouching = Owner->bIsCrouched;
 		bEnableJump = Owner->GetVelocity().Z > 0;
 		bJumping = Owner->GetVelocity().Z > 0 ? true : false;
-
-		UE_LOG(LogTemp, Log, TEXT("velocity = %f , Speed = %f"), Owner->GetVelocity().Z, Speed);
+		bIsRunning = Owner->GetbIsRunning();
+		UE_LOG(LogTemp, Log, TEXT("bisRunning  = %d"), bIsRunning);
+	UE_LOG(LogTemp, Log, TEXT("velocity = %f , Speed = %f"), Owner->GetVelocity().Z, Speed);
 	}
 	
 }

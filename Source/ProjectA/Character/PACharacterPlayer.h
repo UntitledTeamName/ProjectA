@@ -25,8 +25,8 @@ protected:
 
 public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-
-
+	bool GetbIsRunning() { return bIsRunning; };
+	
 protected:
 
 	void SetCharacterControl(ECharacterControlType NewCharacterControlType);
@@ -81,9 +81,19 @@ protected:
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly)
 	float MaxWeight;
 	
-	UPROPERTY(Replicated)
+	UPROPERTY(ReplicatedUsing = OnRep_IsRunning)
 	bool bIsRunning;
 
+
+	UFUNCTION()
+	void OnRep_IsRunning();
+
+	UFUNCTION(Server, Reliable, WithValidation)
+	void ServerStartSprint(const FInputActionValue& Value);
+
+	UFUNCTION(Server, Reliable, WithValidation)
+	void ServerStopSprint(const FInputActionValue& Value);
+	
 	// Stamina
 
 	void UpdateStamina();
@@ -91,7 +101,7 @@ protected:
 	UPROPERTY(EditAnywhere,BlueprintReadOnly, Category = Movement)
 	float MaxStamina;
 
-	UPROPERTY(EditAnywhere,BlueprintReadOnly, Category = Movement)
+	UPROPERTY(Replicated, EditAnywhere,BlueprintReadOnly, Category = Movement)
 	float CurrentStamina;
 
 	UPROPERTY(EditAnywhere,Category = Movement)
