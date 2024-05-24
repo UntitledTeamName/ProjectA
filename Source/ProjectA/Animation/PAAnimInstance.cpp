@@ -4,7 +4,7 @@
 #include "Animation/PAAnimInstance.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
-#include "Player/PACharacterPlayer.h"
+#include "Character/PACharacterPlayer.h"
 
 UPAAnimInstance::UPAAnimInstance()
 {
@@ -33,7 +33,9 @@ void UPAAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 		Direction = CalculateDirection(Owner->GetVelocity(), Owner->GetActorRotation());
 		bCrouching = Owner->bIsCrouched;
 		bEnableJump = Owner->GetVelocity().Z > 0;
+		bJumping = Owner->GetVelocity().Z > 0 ? true : false;
 
+		UE_LOG(LogTemp, Log, TEXT("velocity = %f , Speed = %f"), Owner->GetVelocity().Z, Speed);
 	}
 	
 }

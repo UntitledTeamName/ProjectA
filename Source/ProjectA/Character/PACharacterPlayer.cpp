@@ -1,13 +1,17 @@
 ﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "Player/PACharacterPlayer.h"
+#include "Character/PACharacterPlayer.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "Components/PACharacterStatComponent.h"
 #include "InputMappingContext.h"
 #include "Character/PACharacterControlData.h"
 #include "EnhancedInputComponent.h"
+#include "Components/WidgetComponent.h"
 #include "EnhancedInputSubsystems.h"
+#include "Net/UnrealNetwork.h"
 
 APACharacterPlayer::APACharacterPlayer()
 {
@@ -22,7 +26,10 @@ APACharacterPlayer::APACharacterPlayer()
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
 	// 컨트롤러와 카메라 회전 동기화
 	FollowCamera->bUsePawnControlRotation = true;
-
+	
+	
+	bReplicates = true;
+	
 
 	// Input
 	static ConstructorHelpers::FObjectFinder<UInputAction> InputActionJumpRef(TEXT("/Script/EnhancedInput.InputAction'/Game/ProjectA/Input/Actions/IA_Jump.IA_Jump'"));
@@ -49,6 +56,13 @@ APACharacterPlayer::APACharacterPlayer()
 		CrouchAction = CrouchActionRef.Object;
 	}
 
+	static ConstructorHelpers::FObjectFinder<UInputAction> SprintActionRef(TEXT("/Script/EnhancedInput.InputAction'/Game/ProjectA/Input/Actions/IA_Sprint.IA_Sprint'"));
+	if (nullptr != SprintActionRef.Object)
+	{
+		SprintAction = SprintActionRef.Object;
+	}
+
+
 
 
 	static ConstructorHelpers::FObjectFinder<UPACharacterControlData> ThirdPersonDataRef(TEXT("/Script/ProjectA.PACharacterControlData'/Game/ProjectA/CharacterControl/PAC_ThirdPerson.PAC_ThirdPerson'"));
@@ -65,6 +79,18 @@ APACharacterPlayer::APACharacterPlayer()
 
 	CurrentCharacterControlType = ECharacterControlType::ThirdPerson;
 
+
+	// Stamina Section
+
+	MaxStamina = 500.0f;
+	CurrentStamina = 500.0f;
+	StaminaDrainTime = 5.0f;
+	StaminaRefillTime = 10.0f;
+	DelayBeforeRefill = 20.0f;
+
+	bIsRunning = false;
+
+
 }
 
 void APACharacterPlayer::BeginPlay()
@@ -74,6 +100,12 @@ void APACharacterPlayer::BeginPlay()
 
 	SetCharacterControl(CurrentCharacterControlType);
 
+}
+
+void APACharacterPlayer::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+	UpdateStamina();
 }
 
 void APACharacterPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -86,10 +118,15 @@ void APACharacterPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 	// 인풋 액션 바인딩
 	EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Triggered, this, &ACharacter::Jump);
 	EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
+
 	EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &APACharacterPlayer::Move);
 	EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &APACharacterPlayer::Look);
+
 	EnhancedInputComponent->BindAction(CrouchAction, ETriggerEvent::Triggered, this, &APACharacterPlayer::StartCrouch);
 	EnhancedInputComponent->BindAction(CrouchAction, ETriggerEvent::Completed, this, &APACharacterPlayer::StopCrouch);
+
+	EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Triggered, this, &APACharacterPlayer::StartSprint);
+	EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Completed, this, &APACharacterPlayer::StopSprint);
 	
 
 
@@ -97,6 +134,13 @@ void APACharacterPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 
 void APACharacterPlayer::SetCharacterControl(ECharacterControlType NewCharacterControlType)
 {
+	
+	if (!IsLocallyControlled())
+	{
+		return;
+	}
+	
+
 	UPACharacterControlData* NewCharacterControl = CharacterControlManager[NewCharacterControlType];
 
 	check(NewCharacterControl);
@@ -128,6 +172,14 @@ void APACharacterPlayer::SetCharacterControlData(const UPACharacterControlData* 
 	CameraBoom->bInheritYaw = CharacterControlData->bInheritYaw;
 	CameraBoom->bInheritRoll = CharacterControlData->bInheritRoll;
 	CameraBoom->bDoCollisionTest = CharacterControlData->bDoCollisionTest;
+}
+
+void APACharacterPlayer::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	
+	DOREPLIFETIME(APACharacterPlayer, bIsRunning);
+
 }
 
 void APACharacterPlayer::Move(const FInputActionValue& Value)
@@ -172,15 +224,72 @@ void APACharacterPlayer::Look(const FInputActionValue& Value)
 void APACharacterPlayer::StartCrouch(const FInputActionValue& Value)
 {
 	Crouch();
-	UE_LOG(LogTemp, Log, TEXT("Crouched"));
-
 }
 
 void APACharacterPlayer::StopCrouch(const FInputActionValue& Value)
 {
 	UnCrouch();
 
-	UE_LOG(LogTemp, Log, TEXT("UnCrouched"));
+}
+
+void APACharacterPlayer::StartSprint(const FInputActionValue& Value)
+{
+	if (bHasStamina)
+	{
+		GetCharacterMovement()->MaxWalkSpeed = Stat->GetRunSpeed();
+		if (GetVelocity().Size() >= 0.5)
+		{
+			bIsRunning = true;
+		}
+		else
+		{
+			bIsRunning = false;
+		}
+	
+		
+	}
+
+
+
+
+	
+}
+
+void APACharacterPlayer::StopSprint(const FInputActionValue& Value)
+{
+	GetCharacterMovement()->MaxWalkSpeed = Stat->GetWalkSpeed();
+	bIsRunning = false;
+}
+
+void APACharacterPlayer::UpdateStamina()
+{
+	// Drain Stamina
+	if (bIsRunning)
+	{
+		CurrentStamina -= StaminaDrainTime;
+		CurrentRefillDelayTime = DelayBeforeRefill;
+	}
+
+	if (!bIsRunning && CurrentStamina < MaxStamina)
+	{
+		CurrentRefillDelayTime--;
+		if (CurrentRefillDelayTime <= KINDA_SMALL_NUMBER)
+		{
+			CurrentStamina += StaminaRefillTime;
+		}
+	}
+
+	if (CurrentStamina <= KINDA_SMALL_NUMBER)
+	{
+		bHasStamina = false;
+		StopSprint(0.0f);
+	}
+	else 
+	{
+		bHasStamina = true;
+	}
+	
+
 }
 
 

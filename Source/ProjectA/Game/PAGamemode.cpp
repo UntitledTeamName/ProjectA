@@ -5,7 +5,7 @@
 
 APAGamemode::APAGamemode()
 {
-	static ConstructorHelpers::FClassFinder<APawn> DefaultPawnClassRef(TEXT("/Script/Engine.Blueprint'/Game/ProjectA/Blueprints/BP_PACharacterPlayer.BP_PACharacterPlayer_C'"));
+	static ConstructorHelpers::FClassFinder<APawn> DefaultPawnClassRef(TEXT("/Script/Engine.Blueprint'/Game/ProjectA/Blueprints/Character/BP_PACharacterPlayer.BP_PACharacterPlayer_C'"));
 	if (DefaultPawnClassRef.Class)
 	{
 		DefaultPawnClass = DefaultPawnClassRef.Class;

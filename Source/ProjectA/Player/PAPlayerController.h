@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
+
 #include "PAPlayerController.generated.h"
 
 /**
@@ -15,7 +16,18 @@ class PROJECTA_API APAPlayerController : public APlayerController
 	GENERATED_BODY()
 
 
+public:
+	APAPlayerController();
+
+
+
 protected:
 	virtual void BeginPlay() override;
+
+
+protected:
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Widget, Meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class UUserWidget > UserWidgetHUD;
 	
 };

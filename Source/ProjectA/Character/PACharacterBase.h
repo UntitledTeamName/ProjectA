@@ -13,6 +13,45 @@ enum class ECharacterControlType : uint8
 	FirstPerson
 };
 
+UENUM()
+enum class ECharacterState : uint8
+{
+
+	StandIdle,
+	StandMoving,
+	Sprinting,
+	Jumping,
+	Vaulting,
+	WallClimbing,
+	StandFiring,
+	StandAiming,
+	StandAimFiring,
+	StandReloading,
+	StandAimReloading,
+	StandtoCrouch,
+	StandtoProne,
+	CrouchIdle,
+	CrouchMoving,
+	CrouchAiming,
+	CrouchAimFiring,
+	CrouchReloading,
+	CrouchAimReloading,
+	CrouchtoStand,
+	CrouchtoProne,
+	ProneIdle,
+	ProneMoving,
+	ProneFiring,
+	ProneAiming,
+	ProneAimFiring,
+	ProneReloading,
+	ProneAimReloading,
+	PronetoStand,
+	PronetoCrouch,
+	Interaction,
+	Death
+};
+
+
 
 UCLASS()
 class PROJECTA_API APACharacterBase : public ACharacter
@@ -34,9 +73,34 @@ public:
 protected:
 	virtual void SetCharacterControlData(const class UPACharacterControlData* CharacterControlData);
 
+	// Stat Section
+
+protected:
+
+	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, Category = Stat, Meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class UPACharacterStatComponent> Stat;
+	
+
+	// Widget Section
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Widget, Meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class UWidgetComponent > InfoBar;
+
+
 
 	UPROPERTY(EditAnywhere, Category = CharacterControl, Meta = (AllowPrivateAccess = "true"))
-
 	TMap<ECharacterControlType, class UPACharacterControlData*> CharacterControlManager;
+
+
+
+
+
+
+
+
+
+
+
+
 
 };
