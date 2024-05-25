@@ -81,18 +81,30 @@ protected:
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly)
 	float MaxWeight;
 	
-	UPROPERTY(ReplicatedUsing = OnRep_IsRunning)
+	UPROPERTY()
 	bool bIsRunning;
 
+	bool bCanSprint;
 
-	UFUNCTION()
-	void OnRep_IsRunning();
+
+	// Rotation Section
+
+	UFUNCTION(Server,Reliable, WithValidation)
+	void ServerSetRotationRPC(FRotator NewRotation);
+
+	UFUNCTION(NetMulticast,Unreliable)
+	void ClientSetRotationMulticastRPC(FRotator NewRotation);
+
+
+	//Sprint Section
 
 	UFUNCTION(Server, Reliable, WithValidation)
-	void ServerStartSprint(const FInputActionValue& Value);
+	void ServerSprintRPC();
 
-	UFUNCTION(Server, Reliable, WithValidation)
-	void ServerStopSprint(const FInputActionValue& Value);
+	UFUNCTION(NetMulticast, Unreliable)
+	void ClientSprintMulticastRPC();
+
+
 	
 	// Stamina
 

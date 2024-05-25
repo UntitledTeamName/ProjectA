@@ -86,10 +86,12 @@ APACharacterPlayer::APACharacterPlayer()
 	MaxStamina = 500.0f;
 	CurrentStamina = 500.0f;
 	StaminaDrainTime = 5.0f;
-	StaminaRefillTime = 10.0f;
+	StaminaRefillTime = 5.0f;
 	DelayBeforeRefill = 20.0f;
 
 	bIsRunning = false;
+
+	bCanSprint = true;
 
 
 }
@@ -110,6 +112,7 @@ void APACharacterPlayer::Tick(float DeltaTime)
 	if(!bIsCrouched)
 	UpdateStamina();
 
+	
 	
 }
 
@@ -183,8 +186,6 @@ void APACharacterPlayer::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& O
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	
-	DOREPLIFETIME(APACharacterPlayer, bIsRunning);
-	DOREPLIFETIME(APACharacterPlayer, CurrentStamina);
 
 }
 
@@ -192,20 +193,27 @@ void APACharacterPlayer::Move(const FInputActionValue& Value)
 {
 	FVector2D MovementVector = Value.Get<FVector2D>();
 
-	/*
-	컨트롤러의 회전 값을 가져와서 있으면 회전시켜준다.
-	캐릭터가 바라보는 방향으로 전진할 수 있게 해줌
-	*/
 	const FRotator Rotation = Controller->GetControlRotation();
 	const FRotator YawRotation(0, Rotation.Yaw, 0);
 
+	FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
+	FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
 
-	const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
-	const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
+	if (bIsRunning)
+	{
+		if (MovementVector.Y != 0) MovementVector.Y = 0;
+		if (MovementVector.X == -1) MovementVector.X = 1;
 
-	AddMovementInput(ForwardDirection, MovementVector.X);
-	AddMovementInput(RightDirection, MovementVector.Y);
+		AddMovementInput(ForwardDirection, MovementVector.X);
+	}
+	else
+	{
+		if (MovementVector.Y != 0 || MovementVector.X == -1) bCanSprint = false;
+		else bCanSprint = true;
 
+		AddMovementInput(ForwardDirection, MovementVector.X);
+		AddMovementInput(RightDirection, MovementVector.Y);
+	}
 }
 
 
@@ -222,9 +230,16 @@ void APACharacterPlayer::Look(const FInputActionValue& Value)
 	// 캐릭터의 회전 동기화
 	FRotator NewRotation = GetActorRotation();
 	NewRotation.Yaw = Controller->GetControlRotation().Yaw;
-	SetActorRotation(NewRotation);
 
-
+	if (HasAuthority())
+	{
+		SetActorRotation(NewRotation);
+	}
+	else
+	{
+		ServerSetRotationRPC(NewRotation);
+	}
+	
 }
 
 void APACharacterPlayer::StartCrouch(const FInputActionValue& Value)
@@ -239,20 +254,37 @@ void APACharacterPlayer::StopCrouch(const FInputActionValue& Value)
 	bIsCrouched = false;
 }
 
-void APACharacterPlayer::OnRep_IsRunning()
+void APACharacterPlayer::ClientSetRotationMulticastRPC_Implementation(FRotator NewRotation)
 {
-	// This function will be called on clients when bIsRunning is updated on the server
-	// Update character movement or animation states here
-	
-	
+	SetActorRotation(NewRotation);
 }
+
+void APACharacterPlayer::ServerSetRotationRPC_Implementation(FRotator NewRotation)
+{
+	SetActorRotation(NewRotation);
+
+	ClientSetRotationMulticastRPC(NewRotation);
+
+}
+bool APACharacterPlayer::ServerSetRotationRPC_Validate(FRotator NewRotation)
+{
+	return true;
+}
+
+
 
 void APACharacterPlayer::StartSprint(const FInputActionValue& Value)
 {
+	
+	if (GetVelocity().Size() <= KINDA_SMALL_NUMBER || !bIsRunning && CurrentStamina < 300.0f)
+	{
+		bIsRunning = false;
+		return;
+	}
+
 	if (HasAuthority())
 	{
-		// Server logic
-		if (bHasStamina)
+		if (bHasStamina && bCanSprint)
 		{
 			GetCharacterMovement()->MaxWalkSpeed = Stat->GetRunSpeed();
 			bIsRunning = true;
@@ -260,37 +292,49 @@ void APACharacterPlayer::StartSprint(const FInputActionValue& Value)
 	}
 	else
 	{
-		// Client logic
-		GetCharacterMovement()->MaxWalkSpeed = Stat->GetRunSpeed();
-		bIsRunning = true;
-		ServerStartSprint(Value);
-		
+		ServerSprintRPC();
 	}
+
+	
 }
 
 void APACharacterPlayer::StopSprint(const FInputActionValue& Value)
 {
-	if (HasAuthority())
+	// Server logic
+	GetCharacterMovement()->MaxWalkSpeed = Stat->GetWalkSpeed();
+	bIsRunning = false;
+
+}
+
+void APACharacterPlayer::ServerSprintRPC_Implementation()
+{
+	if (bHasStamina && bCanSprint)
 	{
-		// Server logic
-		GetCharacterMovement()->MaxWalkSpeed = Stat->GetWalkSpeed();
-		bIsRunning = false;
+		GetCharacterMovement()->MaxWalkSpeed = Stat->GetRunSpeed();
+		bIsRunning = true;
 	}
-	else
+
+	ClientSprintMulticastRPC();
+}
+bool APACharacterPlayer::ServerSprintRPC_Validate()
+{
+	return true;
+}
+
+void APACharacterPlayer::ClientSprintMulticastRPC_Implementation()
+{
+	if (bHasStamina && bCanSprint)
 	{
-		// Client logic
-		GetCharacterMovement()->MaxWalkSpeed = Stat->GetWalkSpeed();
-		bIsRunning = false;
-		ServerStopSprint(Value);
-		
+		GetCharacterMovement()->MaxWalkSpeed = Stat->GetRunSpeed();
+		bIsRunning = true;
 	}
+
 }
 
 void APACharacterPlayer::UpdateStamina()
 {
-	if (HasAuthority())
-	{
-		if (bIsRunning)
+
+		if (bIsRunning )
 		{
 			CurrentStamina -= StaminaDrainTime;
 			CurrentRefillDelayTime = DelayBeforeRefill;
@@ -314,28 +358,7 @@ void APACharacterPlayer::UpdateStamina()
 		{
 			bHasStamina = true;
 		}
-	}
-}
-
-
-void APACharacterPlayer::ServerStartSprint_Implementation(const FInputActionValue& Value)
-{
-	StartSprint(Value);
 	
 }
 
-bool APACharacterPlayer::ServerStartSprint_Validate(const FInputActionValue& Value)
-{
-	return true;
-}
 
-void APACharacterPlayer::ServerStopSprint_Implementation(const FInputActionValue& Value)
-{
-	StopSprint(Value);
-
-}
-
-bool APACharacterPlayer::ServerStopSprint_Validate(const FInputActionValue& Value)
-{
-	return true;
-}
