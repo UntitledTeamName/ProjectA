@@ -33,8 +33,8 @@ void UPAAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 		Direction = CalculateDirection(Owner->GetVelocity(), Owner->GetActorRotation());
 		bCrouching = Owner->bIsCrouched;
 		bEnableJump = Owner->GetVelocity().Z > 0;
-		bJumping = Owner->GetVelocity().Z > 0 ? true : false;
-		bIsRunning = Owner->GetbIsRunning();
+		bJumping = Owner->GetVelocity().Z != 0 ? true : false;
+		bIsRunning = Owner->GetbIsSprinting();
 
 		//UE_LOG(LogTemp, Log, TEXT("bisRunning  = %d"), bIsRunning);
 		//UE_LOG(LogTemp, Log, TEXT("velocity = %f , Speed = %f"), Owner->GetVelocity().Z, Speed);

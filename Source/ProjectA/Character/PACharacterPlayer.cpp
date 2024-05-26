@@ -32,7 +32,8 @@ APACharacterPlayer::APACharacterPlayer()
 	bReplicates = true;
 	
 
-	// Input
+	// ConstructorHelpers Section
+
 	static ConstructorHelpers::FObjectFinder<UInputAction> InputActionJumpRef(TEXT("/Script/EnhancedInput.InputAction'/Game/ProjectA/Input/Actions/IA_Jump.IA_Jump'"));
 	if (nullptr != InputActionJumpRef.Object)
 	{
@@ -63,9 +64,6 @@ APACharacterPlayer::APACharacterPlayer()
 		SprintAction = SprintActionRef.Object;
 	}
 
-
-
-
 	static ConstructorHelpers::FObjectFinder<UPACharacterControlData> ThirdPersonDataRef(TEXT("/Script/ProjectA.PACharacterControlData'/Game/ProjectA/CharacterControl/PAC_ThirdPerson.PAC_ThirdPerson'"));
 	if (ThirdPersonDataRef.Object)
 	{
@@ -89,7 +87,7 @@ APACharacterPlayer::APACharacterPlayer()
 	StaminaRefillTime = 5.0f;
 	DelayBeforeRefill = 20.0f;
 
-	bIsRunning = false;
+	bIsSprinting = false;
 
 	bCanSprint = true;
 
@@ -112,8 +110,7 @@ void APACharacterPlayer::Tick(float DeltaTime)
 	if(!bIsCrouched)
 	UpdateStamina();
 
-	
-	
+
 }
 
 void APACharacterPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -163,7 +160,7 @@ void APACharacterPlayer::SetCharacterControl(ECharacterControlType NewCharacterC
 		if (NewMappingContext)
 		{
 			Subsystem->AddMappingContext(NewMappingContext, 0);
-			UE_LOG(LogTemp, Log, TEXT("enhancedInputMapped"));
+			//UE_LOG(LogTemp, Log, TEXT("enhancedInputMapped"));
 		}
 	}
 
@@ -199,7 +196,7 @@ void APACharacterPlayer::Move(const FInputActionValue& Value)
 	FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
 	FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
 
-	if (bIsRunning)
+	if (bIsSprinting)
 	{
 		if (MovementVector.Y != 0) MovementVector.Y = 0;
 		if (MovementVector.X == -1) MovementVector.X = 1;
@@ -211,8 +208,12 @@ void APACharacterPlayer::Move(const FInputActionValue& Value)
 		if (MovementVector.Y != 0 || MovementVector.X == -1) bCanSprint = false;
 		else bCanSprint = true;
 
+		
 		AddMovementInput(ForwardDirection, MovementVector.X);
 		AddMovementInput(RightDirection, MovementVector.Y);
+
+		UE_LOG(LogTemp, Log, TEXT("X =  %f  y =  %f"),ForwardDirection.X, RightDirection.Y);
+		
 	}
 }
 
@@ -276,9 +277,9 @@ bool APACharacterPlayer::ServerSetRotationRPC_Validate(FRotator NewRotation)
 void APACharacterPlayer::StartSprint(const FInputActionValue& Value)
 {
 	
-	if (GetVelocity().Size() <= KINDA_SMALL_NUMBER || !bIsRunning && CurrentStamina < 300.0f)
+	if (GetVelocity().Size() <= KINDA_SMALL_NUMBER || !bIsSprinting && CurrentStamina < 300.0f)
 	{
-		bIsRunning = false;
+		bIsSprinting = false;
 		return;
 	}
 
@@ -287,7 +288,7 @@ void APACharacterPlayer::StartSprint(const FInputActionValue& Value)
 		if (bHasStamina && bCanSprint)
 		{
 			GetCharacterMovement()->MaxWalkSpeed = Stat->GetRunSpeed();
-			bIsRunning = true;
+			bIsSprinting = true;
 		}
 	}
 	else
@@ -302,7 +303,7 @@ void APACharacterPlayer::StopSprint(const FInputActionValue& Value)
 {
 	// Server logic
 	GetCharacterMovement()->MaxWalkSpeed = Stat->GetWalkSpeed();
-	bIsRunning = false;
+	bIsSprinting = false;
 
 }
 
@@ -311,14 +312,17 @@ void APACharacterPlayer::ServerSprintRPC_Implementation()
 	if (bHasStamina && bCanSprint)
 	{
 		GetCharacterMovement()->MaxWalkSpeed = Stat->GetRunSpeed();
-		bIsRunning = true;
+		bIsSprinting = true;
 	}
 
 	ClientSprintMulticastRPC();
 }
 bool APACharacterPlayer::ServerSprintRPC_Validate()
 {
-	return true;
+	if (GetVelocity().Size() <= 710.0f)
+		return true;
+	else 
+		return false;
 }
 
 void APACharacterPlayer::ClientSprintMulticastRPC_Implementation()
@@ -326,7 +330,7 @@ void APACharacterPlayer::ClientSprintMulticastRPC_Implementation()
 	if (bHasStamina && bCanSprint)
 	{
 		GetCharacterMovement()->MaxWalkSpeed = Stat->GetRunSpeed();
-		bIsRunning = true;
+		bIsSprinting = true;
 	}
 
 }
@@ -334,13 +338,13 @@ void APACharacterPlayer::ClientSprintMulticastRPC_Implementation()
 void APACharacterPlayer::UpdateStamina()
 {
 
-		if (bIsRunning )
+		if (bIsSprinting )
 		{
 			CurrentStamina -= StaminaDrainTime;
 			CurrentRefillDelayTime = DelayBeforeRefill;
 		}
 
-		if (!bIsRunning && CurrentStamina < MaxStamina)
+		if (!bIsSprinting && CurrentStamina < MaxStamina)
 		{
 			CurrentRefillDelayTime--;
 			if (CurrentRefillDelayTime <= KINDA_SMALL_NUMBER)
