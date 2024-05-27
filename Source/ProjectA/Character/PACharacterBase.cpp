@@ -7,6 +7,7 @@
 #include "Character/PACharacterControlData.h"
 #include "Physics/PACollision.h"
 #include "Blueprint/UserWidget.h"
+#include "Game/PAGameInstance.h"
 #include "Components/WidgetComponent.h"
 #include "Components/PACharacterStatComponent.h"
 
@@ -14,7 +15,8 @@
 // Sets default values
 APACharacterBase::APACharacterBase()
 {
- 	
+
+	UE_LOG(LogTemp, Log, TEXT("APACharacterBase Initializer"));
 	// Pawn
 	bUseControllerRotationPitch = false;
 	bUseControllerRotationYaw = false;
@@ -29,7 +31,11 @@ APACharacterBase::APACharacterBase()
 	GetCharacterMovement()->RotationRate = FRotator(0.0f, 0.0f, 0.0f);
 	GetCharacterMovement()->JumpZVelocity = 500.f;
 	GetCharacterMovement()->AirControl = 0.35f;
-	GetCharacterMovement()->MaxWalkSpeed = 500.f;
+
+
+	//GetCharacterMovement()->MaxWalkSpeed = *CastChecked<UPAGameInstance>(GetWorld()->GetGameInstance())->GetHttpDownloadManagerRef()->DataMap.Find("MaxSpeed");
+	
+
 	GetCharacterMovement()->MinAnalogWalkSpeed = 20.f;
 	GetCharacterMovement()->BrakingDecelerationWalking = 2000.f;
 
@@ -79,13 +85,17 @@ APACharacterBase::APACharacterBase()
 void APACharacterBase::BeginPlay()
 {
 	Super::BeginPlay();
+	UE_LOG(LogTemp, Log, TEXT("APACharacterBase BeginPlay"));
 
 	
 	if (IsLocallyControlled())
 	{
 		InfoBar->DestroyComponent(); 
 	}
+	
+	
 
+	
 	
 }
 
@@ -108,3 +118,5 @@ void APACharacterBase::SetCharacterControlData(const UPACharacterControlData* Ch
 	GetCharacterMovement()->RotationRate = CharacterControlData->RotationRate;
 
 }
+
+

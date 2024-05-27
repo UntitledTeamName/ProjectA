@@ -3,6 +3,8 @@
 
 #include "Components/PACharacterStatComponent.h"
 #include "Net/UnrealNetwork.h"
+#include "Game/PAGameInstance.h"
+#include "NetWork/PAHttpDownloadManager.h"
 
 // Sets default values for this component's properties
 UPACharacterStatComponent::UPACharacterStatComponent()
@@ -11,12 +13,11 @@ UPACharacterStatComponent::UPACharacterStatComponent()
 	MaxHp = 200.0f;
 	SetHp(MaxHp);
 
-	WalkSpeed = 500.0f;
+	//WalkSpeed = 500.0f;
 	RunSpeed = 700.f;
 
-	
 	SetIsReplicated(true);
-
+	
 }
 
 
@@ -26,6 +27,14 @@ void UPACharacterStatComponent::BeginPlay()
 	Super::BeginPlay();
 	
 	SetHp(MaxHp);
+
+	UPAHttpDownloadManager* DownloadManager;
+	DownloadManager = (Cast<UPAGameInstance>(GetWorld()->GetGameInstance()))->GetHttpDownloadManagerRef();
+	if (DownloadManager)
+	{
+
+		DownloadManager->OnDataFetched.AddDynamic(this, &UPACharacterStatComponent::SetStatFromFetchedData);
+	}
 	
 }
 
@@ -45,6 +54,13 @@ float UPACharacterStatComponent::ApplyDamage(float InDamage)
 	return ActualDamage;
 }
 
+void UPACharacterStatComponent::SetStatFromFetchedData()
+{
+	UE_LOG(LogTemp, Log, TEXT("SetStatFromFetcehdData"));
+	WalkSpeed = *(Cast<UPAGameInstance>(GetWorld()->GetGameInstance()))->GetHttpDownloadManagerRef()->DataMap.Find("MaxSpeed");
+	
+}
+
 void UPACharacterStatComponent::SetHp(float NewHp)
 {
 
@@ -52,6 +68,8 @@ void UPACharacterStatComponent::SetHp(float NewHp)
 
 	OnHpChanged.Broadcast(CurrentHp);
 }
+
+
 
 void UPACharacterStatComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {

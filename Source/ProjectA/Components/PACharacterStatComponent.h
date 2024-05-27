@@ -37,8 +37,13 @@ public:
 
 	float ApplyDamage(float InDamage);
 
+
+	UFUNCTION()
+	void SetStatFromFetchedData();
+
 protected:
 	void SetHp(float NewHp);
+
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps)  const override;
 

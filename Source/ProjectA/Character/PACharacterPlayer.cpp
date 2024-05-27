@@ -212,7 +212,7 @@ void APACharacterPlayer::Move(const FInputActionValue& Value)
 		AddMovementInput(ForwardDirection, MovementVector.X);
 		AddMovementInput(RightDirection, MovementVector.Y);
 
-		UE_LOG(LogTemp, Log, TEXT("X =  %f  y =  %f"),ForwardDirection.X, RightDirection.Y);
+	//	UE_LOG(LogTemp, Log, TEXT("X =  %f  y =  %f"),ForwardDirection.X, RightDirection.Y);
 		
 	}
 }
