@@ -30,10 +30,13 @@ public:
 
 
 
-	FORCEINLINE float GetMaxHp() { return MaxHp; }
-	FORCEINLINE float GetCurrentHp() { return CurrentHp; }
-	FORCEINLINE float GetWalkSpeed() { return WalkSpeed; }
-	FORCEINLINE float GetRunSpeed() { return RunSpeed; }
+	FORCEINLINE float GetMaxHealth() { return MaxHealth; }
+	FORCEINLINE float GetCurrentHealth() { return CurrentHealth; }
+	FORCEINLINE float GetStandMoveSpeed() { return StandMoveSpeed; }
+	FORCEINLINE float GetSprintSpeed() { return MaxSprintSpeed; }
+	FORCEINLINE float GetProneMoveSpeed() { return ProneMoveSpeed; }
+	FORCEINLINE float GetCurrentMoveSpeed() { return CurrentMoveSpeed; }
+
 
 	float ApplyDamage(float InDamage);
 
@@ -44,23 +47,95 @@ public:
 protected:
 	void SetHp(float NewHp);
 
-
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps)  const override;
 
-
-
 	UPROPERTY(BlueprintReadOnly, Category = Stat)
-	float MaxHp;
+	float MaxHealth;
 
 	UPROPERTY(Transient, BlueprintReadOnly, Category = Stat)
-	float CurrentHp;
+	float CurrentHealth;
+
+	//Movement Section
+
+	UPROPERTY(Replicated, BlueprintReadWrite, Category = Movement)
+	float CurrentMoveSpeed;
+
+	UPROPERTY(Replicated, BlueprintReadWrite, Category = Movement)
+	float StandMoveSpeed;
 
 	UPROPERTY(Replicated, BlueprintReadOnly, Category = Movement)
-	float WalkSpeed;
+	float CrouchMoveSpeed;
+	
+	UPROPERTY(Replicated, BlueprintReadOnly, Category = Movement)
+	float ProneMoveSpeed;
+	
+	UPROPERTY(Replicated, BlueprintReadOnly, Category = Movement)
+	float MaxSprintSpeed;
 
 	UPROPERTY(Replicated, BlueprintReadOnly, Category = Movement)
-	float RunSpeed;
+	float SprintAcceleration;
+	
+	UPROPERTY(Replicated, BlueprintReadOnly, Category = Movement)
+	float JumpPower;
 
+	//Property Section
+
+	UPROPERTY(Replicated, BlueprintReadOnly, Category = Property)
+	float MaxWeight;
+
+	UPROPERTY(Replicated, BlueprintReadOnly, Category = Property)
+	float MaxStamina;
+	
+	UPROPERTY(Replicated, BlueprintReadOnly, Category = Property)
+	float SprintStamina;
+
+	UPROPERTY(Replicated, BlueprintReadOnly, Category = Property)
+	float VaultStamina;
+
+	UPROPERTY(Replicated, BlueprintReadOnly, Category = Property)
+	float ClimbingStamina;
+
+	UPROPERTY(Replicated, BlueprintReadOnly, Category = Property)
+	float StaminaRecovery;
+
+	UPROPERTY(Replicated, BlueprintReadOnly, Category = Property)
+	float StaminaRecoveryTime;
+
+	UPROPERTY(Replicated, BlueprintReadOnly, Category = Property)
+	float StaminaDecreaseType;
+
+	UPROPERTY(Replicated, BlueprintReadOnly, Category = Property)
+	float StaminaDecreaseAmount;
+
+	UPROPERTY(Replicated, BlueprintReadOnly, Category = Property)
+	float JumpStaminaDecrease;
+
+	// Environment Section
+
+	UPROPERTY(Replicated, BlueprintReadOnly, Category = Environment)
+	float InteractionDistance;
+
+	UPROPERTY(Replicated, BlueprintReadOnly, Category = Environment)
+	float VaultWallLow;
+
+	UPROPERTY(Replicated, BlueprintReadOnly, Category = Environment)
+	float VaultWallHigh;
+
+	UPROPERTY(Replicated, BlueprintReadOnly, Category = Environment)
+	float ClimbingLow;
+
+	UPROPERTY(Replicated, BlueprintReadOnly, Category = Environment)
+	float ClimbingHigh;
+	
+	UPROPERTY(Replicated, BlueprintReadOnly, Category = Attack)
+	float KnifeAttackSpeed;
+	
+	UPROPERTY(Replicated, BlueprintReadOnly, Category = Attack)
+	float PistolReloadSpeed;
+
+	UPROPERTY(Replicated, BlueprintReadOnly, Category = Attack)
+	float ClimbiRifleReloadSpeedngHigh;
+	
 
 		
 };

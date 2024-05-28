@@ -8,6 +8,8 @@
 
 UPAAnimInstance::UPAAnimInstance()
 {
+	bHasRifle = true;
+	bIsProningAnimEnd = false;
 
 }
 
@@ -34,7 +36,10 @@ void UPAAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 		bCrouching = Owner->bIsCrouched;
 		bEnableJump = Owner->GetVelocity().Z > 0;
 		bJumping = Owner->GetVelocity().Z != 0 ? true : false;
-		bIsRunning = Owner->GetbIsSprinting();
+		bIsSprinting = Owner->GetbIsSprinting();
+		bIsProning = Owner->GetbIsProning();
+
+		//Pitch = Owner->GetBaseAimRotation().Pitch;
 
 		//UE_LOG(LogTemp, Log, TEXT("bisRunning  = %d"), bIsRunning);
 		//UE_LOG(LogTemp, Log, TEXT("velocity = %f , Speed = %f"), Owner->GetVelocity().Z, Speed);

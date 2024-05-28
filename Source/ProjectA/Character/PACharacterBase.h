@@ -49,6 +49,8 @@ enum class ECharacterState : uint8
 	PronetoCrouch,
 	Interaction,
 	Death
+
+
 };
 
 
@@ -73,9 +75,10 @@ public:
 protected:
 	virtual void SetCharacterControlData(const class UPACharacterControlData* CharacterControlData);
 
-	// Stat Section
 
 protected:
+	
+	// Stat Section
 
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, Category = Stat, Meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UPACharacterStatComponent> Stat;

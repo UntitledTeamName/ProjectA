@@ -10,12 +10,12 @@
 UPACharacterStatComponent::UPACharacterStatComponent()
 {
 	
-	MaxHp = 200.0f;
-	SetHp(MaxHp);
+	MaxHealth = 200.0f;
+	SetHp(MaxHealth);
 
 	//WalkSpeed = 500.0f;
-	RunSpeed = 700.f;
-
+	MaxSprintSpeed = 700.f;
+	ProneMoveSpeed = 100.0f;
 	SetIsReplicated(true);
 	
 }
@@ -26,7 +26,7 @@ void UPACharacterStatComponent::BeginPlay()
 {
 	Super::BeginPlay();
 	
-	SetHp(MaxHp);
+	SetHp(MaxHealth);
 
 	UPAHttpDownloadManager* DownloadManager;
 	DownloadManager = (Cast<UPAGameInstance>(GetWorld()->GetGameInstance()))->GetHttpDownloadManagerRef();
@@ -40,33 +40,37 @@ void UPACharacterStatComponent::BeginPlay()
 
 float UPACharacterStatComponent::ApplyDamage(float InDamage)
 {
-	const float PrevHp = CurrentHp;
+	const float PrevHp = CurrentHealth;
 	const float ActualDamage = FMath::Clamp<float>(InDamage, 0, InDamage);
 
 	SetHp(PrevHp - ActualDamage);
-	if (CurrentHp <= KINDA_SMALL_NUMBER)
+	if (CurrentHealth <= KINDA_SMALL_NUMBER)
 	{
 		OnHpZero.Broadcast();
 	}
 	
-
-
 	return ActualDamage;
 }
 
 void UPACharacterStatComponent::SetStatFromFetchedData()
 {
 	UE_LOG(LogTemp, Log, TEXT("SetStatFromFetcehdData"));
-	WalkSpeed = *(Cast<UPAGameInstance>(GetWorld()->GetGameInstance()))->GetHttpDownloadManagerRef()->DataMap.Find("MaxSpeed");
-	
+	CurrentMoveSpeed = *(Cast<UPAGameInstance>(GetWorld()->GetGameInstance()))->GetHttpDownloadManagerRef()->DataMap.Find("MaxSpeed");
+	StandMoveSpeed = *(Cast<UPAGameInstance>(GetWorld()->GetGameInstance()))->GetHttpDownloadManagerRef()->DataMap.Find("MaxSpeed");
+
+	UE_LOG(LogTemp, Log, TEXT("SetStatFromFetcehdData StandMoveSpeed %f"),StandMoveSpeed);
+
+
+
+
 }
 
 void UPACharacterStatComponent::SetHp(float NewHp)
 {
 
-	CurrentHp = FMath::Clamp<float>(NewHp, 0.0f, MaxHp);
+	CurrentHealth = FMath::Clamp<float>(NewHp, 0.0f, MaxHealth);
 
-	OnHpChanged.Broadcast(CurrentHp);
+	OnHpChanged.Broadcast(CurrentHealth);
 }
 
 
@@ -75,8 +79,8 @@ void UPACharacterStatComponent::GetLifetimeReplicatedProps(TArray<FLifetimePrope
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	DOREPLIFETIME(UPACharacterStatComponent, WalkSpeed);
-	DOREPLIFETIME(UPACharacterStatComponent, RunSpeed);
+	DOREPLIFETIME(UPACharacterStatComponent, StandMoveSpeed);
+	DOREPLIFETIME(UPACharacterStatComponent, MaxSprintSpeed);
 
 
 }

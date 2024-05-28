@@ -3,10 +3,6 @@
 
 #include "NetWork/PAHttpDownloadManager.h"
 #include "HttpModule.h"
-#include "Interfaces/IHttpRequest.h"
-#include "Interfaces/IHttpResponse.h"
-#include "Json.h"
-#include "JsonUtilities.h"
 
 UPAHttpDownloadManager::UPAHttpDownloadManager()
 {
@@ -81,7 +77,6 @@ void UPAHttpDownloadManager::OnResponseReceived(FHttpRequestPtr Request, FHttpRe
                 {
                     UE_LOG(LogTemp, Log, TEXT("%s: %f"), *Pair.Key, Pair.Value);
                 }
-
 
                 OnDataFetched.Broadcast();
             }

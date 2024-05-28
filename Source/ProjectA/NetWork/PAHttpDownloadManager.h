@@ -36,7 +36,6 @@ public:
 
 	FOnDataFetched OnDataFetched;
 
-	
 protected:
 	
 	void OnResponseReceived(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful);

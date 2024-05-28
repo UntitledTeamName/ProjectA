@@ -23,12 +23,18 @@ APACharacterPlayer::APACharacterPlayer()
 	// 컨트롤러와 카메라붐 회전 동기화 
 	CameraBoom->bUsePawnControlRotation = true;
 
-	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
-	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
+	TPPCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("TPPCamera"));
+	TPPCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
 	// 컨트롤러와 카메라 회전 동기화
-	FollowCamera->bUsePawnControlRotation = true;
-	
-	
+	TPPCamera->bUsePawnControlRotation = true;
+
+
+	/*
+	FPPCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FPPCamera"));
+	FPPCamera->SetupAttachment(GetMesh());
+	FPPCamera->SetRelativeLocation(FVector(0.0f, 15.0f, 0.0f));
+	FPPCamera->SetRelativeRotation(FRotator(0.0f, 90.0f, -90.0f));
+	*/
 	bReplicates = true;
 	
 
@@ -63,6 +69,24 @@ APACharacterPlayer::APACharacterPlayer()
 	{
 		SprintAction = SprintActionRef.Object;
 	}
+	
+	static ConstructorHelpers::FObjectFinder<UInputAction> ProneActionRef(TEXT("/Script/EnhancedInput.InputAction'/Game/ProjectA/Input/Actions/IA_Prone.IA_Prone'"));
+	if (nullptr != ProneActionRef.Object)
+	{
+		ProneAction = ProneActionRef.Object;
+	}
+
+	static ConstructorHelpers::FObjectFinder<USkeletalMesh> RifleMeshRef(TEXT("/Game/ProjectA/Resource/MilitaryWeapDark/Weapons/Assault_Rifle_B.Assault_Rifle_B"));
+	if (RifleMeshRef.Succeeded())
+	{
+
+		USkeletalMeshComponent* RifleMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("RifleMesh"));
+		RifleMesh->SetSkeletalMesh(RifleMeshRef.Object);
+
+		RifleMesh->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, TEXT("Weapon_Socket"));
+
+	}
+
 
 	static ConstructorHelpers::FObjectFinder<UPACharacterControlData> ThirdPersonDataRef(TEXT("/Script/ProjectA.PACharacterControlData'/Game/ProjectA/CharacterControl/PAC_ThirdPerson.PAC_ThirdPerson'"));
 	if (ThirdPersonDataRef.Object)
@@ -76,6 +100,7 @@ APACharacterPlayer::APACharacterPlayer()
 		DefaultMappingContext = InputMappingContextRef.Object;
 	}
 
+
 	CurrentCharacterControlType = ECharacterControlType::ThirdPerson;
 
 
@@ -88,7 +113,7 @@ APACharacterPlayer::APACharacterPlayer()
 	DelayBeforeRefill = 20.0f;
 
 	bIsSprinting = false;
-
+	bIsProning = false;
 	bCanSprint = true;
 
 
@@ -133,6 +158,9 @@ void APACharacterPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 	EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Triggered, this, &APACharacterPlayer::StartSprint);
 	EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Completed, this, &APACharacterPlayer::StopSprint);
 	
+
+	EnhancedInputComponent->BindAction(ProneAction, ETriggerEvent::Started, this, &APACharacterPlayer::ToggleProne);
+
 
 
 }
@@ -231,6 +259,7 @@ void APACharacterPlayer::Look(const FInputActionValue& Value)
 	// 캐릭터의 회전 동기화
 	FRotator NewRotation = GetActorRotation();
 	NewRotation.Yaw = Controller->GetControlRotation().Yaw;
+	
 
 	if (HasAuthority())
 	{
@@ -245,19 +274,37 @@ void APACharacterPlayer::Look(const FInputActionValue& Value)
 
 void APACharacterPlayer::StartCrouch(const FInputActionValue& Value)
 {
+	UE_LOG(LogTemp, Log, TEXT("STartCrouch"));
 	Crouch();
 	bIsCrouched = true;
 }
 
 void APACharacterPlayer::StopCrouch(const FInputActionValue& Value)
 {
+
+	UE_LOG(LogTemp, Log, TEXT("uncrouch"));
 	UnCrouch();
+	
 	bIsCrouched = false;
 }
+
+void APACharacterPlayer::ToggleProne()
+{
+	bIsProning = !bIsProning;
+	UE_LOG(LogTemp, Log, TEXT("bIsProning : %d"), bIsProning);
+	// 프론 상태에 따라 최대 이동 속도 설정
+	if (bIsProning)
+	{
+		GetCharacterMovement()->MaxWalkSpeed = Stat->GetProneMoveSpeed();
+	}
+
+}
+
 
 void APACharacterPlayer::ClientSetRotationMulticastRPC_Implementation(FRotator NewRotation)
 {
 	SetActorRotation(NewRotation);
+
 }
 
 void APACharacterPlayer::ServerSetRotationRPC_Implementation(FRotator NewRotation)
@@ -274,6 +321,8 @@ bool APACharacterPlayer::ServerSetRotationRPC_Validate(FRotator NewRotation)
 
 
 
+
+
 void APACharacterPlayer::StartSprint(const FInputActionValue& Value)
 {
 	
@@ -287,7 +336,7 @@ void APACharacterPlayer::StartSprint(const FInputActionValue& Value)
 	{
 		if (bHasStamina && bCanSprint)
 		{
-			GetCharacterMovement()->MaxWalkSpeed = Stat->GetRunSpeed();
+			GetCharacterMovement()->MaxWalkSpeed = Stat->GetSprintSpeed();
 			bIsSprinting = true;
 		}
 	}
@@ -302,16 +351,17 @@ void APACharacterPlayer::StartSprint(const FInputActionValue& Value)
 void APACharacterPlayer::StopSprint(const FInputActionValue& Value)
 {
 	// Server logic
-	GetCharacterMovement()->MaxWalkSpeed = Stat->GetWalkSpeed();
+	GetCharacterMovement()->MaxWalkSpeed = Stat->GetStandMoveSpeed();
 	bIsSprinting = false;
 
 }
+
 
 void APACharacterPlayer::ServerSprintRPC_Implementation()
 {
 	if (bHasStamina && bCanSprint)
 	{
-		GetCharacterMovement()->MaxWalkSpeed = Stat->GetRunSpeed();
+		GetCharacterMovement()->MaxWalkSpeed = Stat->GetSprintSpeed();
 		bIsSprinting = true;
 	}
 
@@ -329,7 +379,7 @@ void APACharacterPlayer::ClientSprintMulticastRPC_Implementation()
 {
 	if (bHasStamina && bCanSprint)
 	{
-		GetCharacterMovement()->MaxWalkSpeed = Stat->GetRunSpeed();
+		GetCharacterMovement()->MaxWalkSpeed = Stat->GetSprintSpeed();
 		bIsSprinting = true;
 	}
 

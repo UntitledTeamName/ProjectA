@@ -40,7 +40,7 @@ APACharacterBase::APACharacterBase()
 	GetCharacterMovement()->BrakingDecelerationWalking = 2000.f;
 
 	// Mesh
-	GetMesh()->SetRelativeLocationAndRotation(FVector(0.0f, 0.0f, -100.0f), FRotator(0.0f, -90.0f, 0.0f));
+	GetMesh()->SetRelativeLocationAndRotation(FVector(0.0f, 0.0f, -96.0f), FRotator(0.0f, -90.0f, 0.0f));
 	GetMesh()->SetAnimationMode(EAnimationMode::AnimationBlueprint);
 	GetMesh()->SetCollisionProfileName(TEXT("NoCollision"));
 
@@ -92,10 +92,6 @@ void APACharacterBase::BeginPlay()
 	{
 		InfoBar->DestroyComponent(); 
 	}
-	
-	
-
-	
 	
 }
 

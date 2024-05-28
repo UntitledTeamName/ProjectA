@@ -17,10 +17,9 @@ class PROJECTA_API UPAAnimInstance : public UAnimInstance
 public:
 	UPAAnimInstance();
 
-	bool GetbIsRunning() { return bIsRunning; };
-	void SetbIsRunning(bool NewValue) {
-		bIsRunning = NewValue;
-	}
+	bool GetbIsRunning() { return bIsSprinting; };
+	bool GetbIsProningAnimEnd() { return bIsProningAnimEnd; }
+	void SetbIsRunning(bool NewValue) { bIsSprinting = NewValue;	}
 
 protected:
 
@@ -51,8 +50,20 @@ protected:
 	bool bCrouching;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Chracter)
-	bool bIsRunning;
+	bool bIsSprinting;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Chracter)
+	bool bIsProning;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Chracter)
+	bool bIsProningAnimEnd;
+
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Chracter)
+	bool bHasRifle;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Chracter)
+	float Pitch;
 
 	
 

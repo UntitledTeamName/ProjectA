@@ -28,6 +28,7 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 	bool GetbIsSprinting() { return bIsSprinting; };
+	bool GetbIsProning() { return bIsProning; };
 	
 protected:
 
@@ -44,8 +45,12 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, Meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class USpringArmComponent> CameraBoom;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, Meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<class UCameraComponent> FollowCamera;
+	UPROPERTY(VisibleAnywhere, BlueprintReadwrite, Category = Camera, Meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class UCameraComponent> TPPCamera;
+
+	//UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Camera, Meta = (AllowPrivateAccess = "true"))
+	//TObjectPtr<class UCameraComponent> FPPCamera;
+
 
 
 	// Input Section
@@ -62,13 +67,20 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, Meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UInputAction> LookAction;
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, Meta = (AllowPrivateAccess = "true"))
-	
+
 	TObjectPtr<class UInputAction> CrouchAction;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, Meta = (AllowPrivateAccess = "true"))
 
-	TObjectPtr<class UInputAction> SprintAction;
+	TObjectPtr<class UInputAction> SprintAction;	
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, Meta = (AllowPrivateAccess = "true"))
+
+	TObjectPtr<class UInputAction> ProneAction;
+
+	
 
 	// Character Control Section
 protected:
@@ -77,6 +89,9 @@ protected:
 	void Look(const FInputActionValue& Value);
 	void StartCrouch(const FInputActionValue& Value);
 	void StopCrouch(const FInputActionValue& Value);
+	
+	void ToggleProne();
+
 	void StartSprint(const FInputActionValue& Value);
 	void StopSprint(const FInputActionValue& Value);
 
@@ -95,6 +110,7 @@ protected:
 	void ClientSetRotationMulticastRPC(FRotator NewRotation);
 
 
+
 	//Sprint Section
 
 	UFUNCTION(Server, Reliable, WithValidation)
@@ -106,6 +122,11 @@ protected:
 	UPROPERTY()
 
 	bool bIsSprinting;
+
+	UPROPERTY(BlueprintReadOnly)
+	bool bIsProning;
+
+
 
 	UPROPERTY()
 
@@ -133,11 +154,9 @@ protected:
 	float DelayBeforeRefill;
 
 	UPROPERTY()
-
 	float CurrentRefillDelayTime;
 
 	UPROPERTY()
-	
 	bool bHasStamina; 
 
 
