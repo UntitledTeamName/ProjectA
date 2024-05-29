@@ -137,6 +137,8 @@ void APACharacterPlayer::Tick(float DeltaTime)
 	if(!bIsCrouched)
 	UpdateStamina();
 
+	UE_LOG(LogTemp, Log, TEXT("bcansprint %d"), bCanSprint);
+
 }
 
 void APACharacterPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -282,6 +284,7 @@ void APACharacterPlayer::Jump(const FInputActionValue& Value)
 	if (!bIsProning && !bIsCrouched && bCanJump)
 	{
 		bPressedJump = true;
+		bCanSprint = false;
 		JumpKeyHoldTime = 0.0f;
 	}
 }
@@ -318,7 +321,7 @@ void APACharacterPlayer::ToggleProne()
 	bIsProning = !bIsProning;
 }
 
-void APACharacterPlayer::ToggleProneAnimEnd()
+void APACharacterPlayer::ProneAnimEnd()
 {
 	if (!GetbIsProning())
 	{
@@ -337,6 +340,11 @@ void APACharacterPlayer::ToggleProneAnimEnd()
 		GetCharacterMovement()->MaxWalkSpeed = GetStatComponent()->GetProneMoveSpeed();
 		UE_LOG(LogTemp, Log, TEXT("Stand to prone called "));
 	}
+}
+
+void APACharacterPlayer::JumpAnimEnd()
+{
+	bCanSprint = true;
 }
 
 
@@ -364,7 +372,6 @@ bool APACharacterPlayer::ServerSetRotationRPC_Validate(FRotator NewRotation)
 void APACharacterPlayer::StartSprint(const FInputActionValue& Value)
 {
 	
-
 	if (GetVelocity().Size() <= KINDA_SMALL_NUMBER )
 	{
 		bIsSprinting = false;
@@ -372,13 +379,11 @@ void APACharacterPlayer::StartSprint(const FInputActionValue& Value)
 		return;
 	}
 
-
-
+	UE_LOG(LogTemp, Log, TEXT("stamina %d cansprint %d !bisproning %d !biscrouched %d "), bHasStamina, bCanSprint,! bIsProning, !bIsCrouched);
 	if (HasAuthority())
 	{
-		if (bHasStamina && bCanSprint && !bIsProning && !bIsCrouched)
+		if (bHasStamina && bCanSprint && !bIsProning && !bIsCrouched )
 		{
-			//UE_LOG(LogTemp, Log, TEXT("bcansprint : %d"), bCanSprint);
 
 			GetCharacterMovement()->MaxWalkSpeed = Stat->GetSprintSpeed();
 			bIsSprinting = true;
@@ -439,7 +444,7 @@ void APACharacterPlayer::ClientSprintMulticastRPC_Implementation()
 
 void APACharacterPlayer::UpdateStamina()
 {
-
+	
 		if (bIsSprinting )
 		{
 			CurrentStamina -= StaminaDrainTime;

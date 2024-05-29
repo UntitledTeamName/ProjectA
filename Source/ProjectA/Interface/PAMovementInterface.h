@@ -25,7 +25,8 @@ class PROJECTA_API IPAMovementInterface
 public:
 
 
-	virtual  void ToggleProneAnimEnd() = 0;
+	virtual  void ProneAnimEnd() = 0;
+	virtual void JumpAnimEnd() = 0;
 
 
 

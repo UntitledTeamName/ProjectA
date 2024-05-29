@@ -18,8 +18,6 @@ public:
 	UPAAnimInstance();
 
 	bool GetbIsRunning() { return bIsSprinting; };
-	bool GetbIsProningAnimEnd() { return bIsProningAnimEnd; }
-	void SetbIsRunning(bool NewValue) { bIsSprinting = NewValue;	}
 
 protected:
 
@@ -44,10 +42,10 @@ protected:
 	bool bEnableJump;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Chracter)
-	bool bJumping;
+	bool bIsJumping;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Chracter)
-	bool bCrouching;
+	bool bIsCrouching;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Chracter)
 	bool bIsSprinting;
@@ -56,11 +54,10 @@ protected:
 	bool bIsProning;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Chracter)
-	bool bIsProningAnimEnd;
-
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Chracter)
 	bool bHasRifle;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Chracter)
+	bool bIsAiming;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Chracter)
 	float Pitch;

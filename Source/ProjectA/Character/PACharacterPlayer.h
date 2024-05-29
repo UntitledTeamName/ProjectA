@@ -30,6 +30,9 @@ public:
 
 	bool GetbIsSprinting() { return bIsSprinting; };
 	bool GetbIsProning() { return bIsProning; };
+	bool GetbIsAiming() { return bIsAiming; };
+
+
 
 
 	
@@ -98,7 +101,8 @@ protected:
 	
 	void ToggleProne();
 
-	virtual  void ToggleProneAnimEnd() override;
+	virtual  void ProneAnimEnd() override;
+	virtual void JumpAnimEnd() override;
 
 	void StartSprint(const FInputActionValue& Value);
 	void StopSprint(const FInputActionValue& Value);
@@ -127,20 +131,24 @@ protected:
 	UFUNCTION(NetMulticast, Unreliable)
 	void ClientSprintMulticastRPC();
 
-	UPROPERTY()
-
+	UPROPERTY(BlueprintReadOnly)
 	bool bIsSprinting;
 
 	UPROPERTY(BlueprintReadOnly)
 	bool bIsProning;
 
 	UPROPERTY()
-
 	bool bCanSprint;
 	
 	UPROPERTY()
-
 	bool bCanJump;
+
+	UPROPERTY(BlueprintReadWrite)
+	bool bIsAiming;
+
+	
+
+
 
 
 	
