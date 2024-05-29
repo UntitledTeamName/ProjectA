@@ -116,6 +116,7 @@ APACharacterPlayer::APACharacterPlayer()
 	bIsSprinting = false;
 	bIsProning = false;
 	bCanSprint = true;
+	bCanJump = true;
 
 
 }
@@ -136,7 +137,6 @@ void APACharacterPlayer::Tick(float DeltaTime)
 	if(!bIsCrouched)
 	UpdateStamina();
 
-
 }
 
 void APACharacterPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -147,8 +147,8 @@ void APACharacterPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 	
 
 	// 인풋 액션 바인딩
-	EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Triggered, this, &ACharacter::Jump);
-	EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
+	EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Triggered, this, &APACharacterPlayer::Jump);
+	EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &APACharacterPlayer::StopJumping);
 
 	EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &APACharacterPlayer::Move);
 	EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &APACharacterPlayer::Look);
@@ -242,8 +242,7 @@ void APACharacterPlayer::Move(const FInputActionValue& Value)
 	else
 	{
 		if (MovementVector.Y != 0 || MovementVector.X == -1) bCanSprint = false;
-		else bCanSprint = true;
-
+	
 		
 		AddMovementInput(ForwardDirection, MovementVector.X);
 		AddMovementInput(RightDirection, MovementVector.Y);
@@ -278,6 +277,24 @@ void APACharacterPlayer::Look(const FInputActionValue& Value)
 	
 }
 
+void APACharacterPlayer::Jump(const FInputActionValue& Value)
+{
+	if (!bIsProning && !bIsCrouched && bCanJump)
+	{
+		bPressedJump = true;
+		JumpKeyHoldTime = 0.0f;
+	}
+}
+
+void APACharacterPlayer::StopJumping(const FInputActionValue& Value)
+{
+	if (!bIsProning && !bIsCrouched && bCanJump)
+	{
+		bPressedJump = false;
+		ResetJumpState();
+	}
+}
+
 void APACharacterPlayer::StartCrouch(const FInputActionValue& Value)
 {
 	UE_LOG(LogTemp, Log, TEXT("STartCrouch"));
@@ -299,15 +316,27 @@ void APACharacterPlayer::StopCrouch(const FInputActionValue& Value)
 void APACharacterPlayer::ToggleProne()
 {
 	bIsProning = !bIsProning;
-	bCanSprint = !bCanSprint;
-	//UE_LOG(LogTemp, Log, TEXT("bcansprint : %d"), bCanSprint);
-	// 프론 상태에 따라 최대 이동 속도 설정
-	if (bIsProning)
+}
+
+void APACharacterPlayer::ToggleProneAnimEnd()
+{
+	if (!GetbIsProning())
 	{
-		GetCharacterMovement()->MaxWalkSpeed = Stat->GetProneMoveSpeed();
+		GetCharacterMovement()->MaxWalkSpeed = GetStatComponent()->GetStandMoveSpeed();
+
+		bCanSprint = true;
+		bCanJump = true;
+
+		UE_LOG(LogTemp, Log, TEXT("Prone to stand called "));
 	}
 
-
+	if (GetbIsProning())
+	{
+		bCanSprint = false;
+		bCanJump = false;
+		GetCharacterMovement()->MaxWalkSpeed = GetStatComponent()->GetProneMoveSpeed();
+		UE_LOG(LogTemp, Log, TEXT("Stand to prone called "));
+	}
 }
 
 
@@ -316,7 +345,6 @@ void APACharacterPlayer::ClientSetRotationMulticastRPC_Implementation(FRotator N
 	SetActorRotation(NewRotation);
 
 }
-
 void APACharacterPlayer::ServerSetRotationRPC_Implementation(FRotator NewRotation)
 {
 	SetActorRotation(NewRotation);
@@ -335,10 +363,9 @@ bool APACharacterPlayer::ServerSetRotationRPC_Validate(FRotator NewRotation)
 
 void APACharacterPlayer::StartSprint(const FInputActionValue& Value)
 {
-
-	UE_LOG(LogTemp, Log, TEXT("sprint start"));
 	
-	if (GetVelocity().Size() <= KINDA_SMALL_NUMBER || !bCanSprint )
+
+	if (GetVelocity().Size() <= KINDA_SMALL_NUMBER )
 	{
 		bIsSprinting = false;
 		
@@ -353,7 +380,6 @@ void APACharacterPlayer::StartSprint(const FInputActionValue& Value)
 		{
 			//UE_LOG(LogTemp, Log, TEXT("bcansprint : %d"), bCanSprint);
 
-			UE_LOG(LogTemp, Log, TEXT("sprint"));
 			GetCharacterMovement()->MaxWalkSpeed = Stat->GetSprintSpeed();
 			bIsSprinting = true;
 		}
@@ -375,6 +401,7 @@ void APACharacterPlayer::StopSprint(const FInputActionValue& Value)
 		UE_LOG(LogTemp, Log, TEXT("sprint stop"));
 
 		bIsSprinting = false;
+		bCanSprint = true;
 	
 	}
 		
@@ -436,7 +463,7 @@ void APACharacterPlayer::UpdateStamina()
 		}
 		else if (CurrentStamina > 300.0f)
 		{
-			bCanSprint = true;
+			
 			bHasStamina = true;
 		}
 	

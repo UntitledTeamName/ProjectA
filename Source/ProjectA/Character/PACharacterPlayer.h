@@ -5,13 +5,14 @@
 #include "CoreMinimal.h"
 #include "Character/PACharacterBase.h"
 #include "InputActionValue.h"
+#include "Interface/PAMovementInterface.h"
 #include "PACharacterPlayer.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class PROJECTA_API APACharacterPlayer : public APACharacterBase
+class PROJECTA_API APACharacterPlayer : public APACharacterBase, public IPAMovementInterface
 {
 	GENERATED_BODY()
 
@@ -89,10 +90,15 @@ protected:
 
 	void Move(const FInputActionValue& Value);
 	void Look(const FInputActionValue& Value);
+	void Jump(const FInputActionValue& Value);
+	void StopJumping(const FInputActionValue& Value);
+
 	void StartCrouch(const FInputActionValue& Value);
 	void StopCrouch(const FInputActionValue& Value);
 	
 	void ToggleProne();
+
+	virtual  void ToggleProneAnimEnd() override;
 
 	void StartSprint(const FInputActionValue& Value);
 	void StopSprint(const FInputActionValue& Value);
@@ -128,11 +134,13 @@ protected:
 	UPROPERTY(BlueprintReadOnly)
 	bool bIsProning;
 
-
-
 	UPROPERTY()
 
 	bool bCanSprint;
+	
+	UPROPERTY()
+
+	bool bCanJump;
 
 
 	

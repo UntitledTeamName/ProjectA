@@ -4,13 +4,13 @@
 
 #include "CoreMinimal.h"
 #include "Animation/AnimNotifies/AnimNotify.h"
-#include "PAAnimNotify_ProneToStand.generated.h"
+#include "PAAnimNotify.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class PROJECTA_API UPAAnimNotify_ProneToStand : public UAnimNotify
+class PROJECTA_API UPAAnimNotify : public UAnimNotify
 {
 	GENERATED_BODY()
 	
