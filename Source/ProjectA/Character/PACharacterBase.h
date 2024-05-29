@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "Components/PACharacterStatComponent.h"
 #include "PACharacterBase.generated.h"
 
 UENUM()
@@ -71,6 +72,8 @@ protected:
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
+
+	UPACharacterStatComponent* GetStatComponent() { return Stat; };
 
 protected:
 	virtual void SetCharacterControlData(const class UPACharacterControlData* CharacterControlData);

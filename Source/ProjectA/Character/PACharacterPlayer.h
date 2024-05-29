@@ -29,6 +29,8 @@ public:
 
 	bool GetbIsSprinting() { return bIsSprinting; };
 	bool GetbIsProning() { return bIsProning; };
+
+
 	
 protected:
 

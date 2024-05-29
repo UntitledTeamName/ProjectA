@@ -12,6 +12,7 @@
 #include "Components/WidgetComponent.h"
 #include "Animation/PAAnimInstance.h"
 #include "EnhancedInputSubsystems.h"
+#include "Player/PAPlayerController.h"
 #include "Net/UnrealNetwork.h"
 
 APACharacterPlayer::APACharacterPlayer()
@@ -218,6 +219,13 @@ void APACharacterPlayer::Move(const FInputActionValue& Value)
 {
 	FVector2D MovementVector = Value.Get<FVector2D>();
 
+	APAPlayerController* PC = Cast<APAPlayerController>(GetController());
+
+	// 키 동시입력 제한
+	if (PC->IsInputKeyDown(EKeys::W) && PC->IsInputKeyDown(EKeys::S)) return;
+	if (PC->IsInputKeyDown(EKeys::A) && PC->IsInputKeyDown(EKeys::D)) return;
+
+
 	const FRotator Rotation = Controller->GetControlRotation();
 	const FRotator YawRotation(0, Rotation.Yaw, 0);
 
@@ -240,8 +248,6 @@ void APACharacterPlayer::Move(const FInputActionValue& Value)
 		AddMovementInput(ForwardDirection, MovementVector.X);
 		AddMovementInput(RightDirection, MovementVector.Y);
 
-	//	UE_LOG(LogTemp, Log, TEXT("X =  %f  y =  %f"),ForwardDirection.X, RightDirection.Y);
-		
 	}
 }
 
@@ -277,6 +283,7 @@ void APACharacterPlayer::StartCrouch(const FInputActionValue& Value)
 	UE_LOG(LogTemp, Log, TEXT("STartCrouch"));
 	Crouch();
 	bIsCrouched = true;
+	bCanSprint = false;
 }
 
 void APACharacterPlayer::StopCrouch(const FInputActionValue& Value)
@@ -286,17 +293,20 @@ void APACharacterPlayer::StopCrouch(const FInputActionValue& Value)
 	UnCrouch();
 	
 	bIsCrouched = false;
+	bCanSprint = true;
 }
 
 void APACharacterPlayer::ToggleProne()
 {
 	bIsProning = !bIsProning;
-	UE_LOG(LogTemp, Log, TEXT("bIsProning : %d"), bIsProning);
+	bCanSprint = !bCanSprint;
+	//UE_LOG(LogTemp, Log, TEXT("bcansprint : %d"), bCanSprint);
 	// 프론 상태에 따라 최대 이동 속도 설정
 	if (bIsProning)
 	{
 		GetCharacterMovement()->MaxWalkSpeed = Stat->GetProneMoveSpeed();
 	}
+
 
 }
 
@@ -325,17 +335,25 @@ bool APACharacterPlayer::ServerSetRotationRPC_Validate(FRotator NewRotation)
 
 void APACharacterPlayer::StartSprint(const FInputActionValue& Value)
 {
+
+	UE_LOG(LogTemp, Log, TEXT("sprint start"));
 	
-	if (GetVelocity().Size() <= KINDA_SMALL_NUMBER || !bIsSprinting && CurrentStamina < 300.0f)
+	if (GetVelocity().Size() <= KINDA_SMALL_NUMBER || !bCanSprint )
 	{
 		bIsSprinting = false;
+		
 		return;
 	}
 
+
+
 	if (HasAuthority())
 	{
-		if (bHasStamina && bCanSprint)
+		if (bHasStamina && bCanSprint && !bIsProning && !bIsCrouched)
 		{
+			//UE_LOG(LogTemp, Log, TEXT("bcansprint : %d"), bCanSprint);
+
+			UE_LOG(LogTemp, Log, TEXT("sprint"));
 			GetCharacterMovement()->MaxWalkSpeed = Stat->GetSprintSpeed();
 			bIsSprinting = true;
 		}
@@ -351,15 +369,22 @@ void APACharacterPlayer::StartSprint(const FInputActionValue& Value)
 void APACharacterPlayer::StopSprint(const FInputActionValue& Value)
 {
 	// Server logic
-	GetCharacterMovement()->MaxWalkSpeed = Stat->GetStandMoveSpeed();
-	bIsSprinting = false;
+	if (!bIsCrouched && !bIsProning)
+	{
+		GetCharacterMovement()->MaxWalkSpeed = Stat->GetStandMoveSpeed();
+		UE_LOG(LogTemp, Log, TEXT("sprint stop"));
 
+		bIsSprinting = false;
+	
+	}
+		
+	
 }
 
 
 void APACharacterPlayer::ServerSprintRPC_Implementation()
 {
-	if (bHasStamina && bCanSprint)
+	if (bHasStamina && bCanSprint && !bIsProning && !bIsCrouched)
 	{
 		GetCharacterMovement()->MaxWalkSpeed = Stat->GetSprintSpeed();
 		bIsSprinting = true;
@@ -377,7 +402,7 @@ bool APACharacterPlayer::ServerSprintRPC_Validate()
 
 void APACharacterPlayer::ClientSprintMulticastRPC_Implementation()
 {
-	if (bHasStamina && bCanSprint)
+	if (bHasStamina && bCanSprint && !bIsProning && !bIsCrouched)
 	{
 		GetCharacterMovement()->MaxWalkSpeed = Stat->GetSprintSpeed();
 		bIsSprinting = true;
@@ -406,10 +431,12 @@ void APACharacterPlayer::UpdateStamina()
 		if (CurrentStamina <= KINDA_SMALL_NUMBER)
 		{
 			bHasStamina = false;
+			bCanSprint = false;
 			StopSprint(0.0f);
 		}
-		else
+		else if (CurrentStamina > 300.0f)
 		{
+			bCanSprint = true;
 			bHasStamina = true;
 		}
 	
