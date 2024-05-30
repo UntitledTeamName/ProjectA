@@ -155,8 +155,7 @@ void APACharacterPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 	EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &APACharacterPlayer::Move);
 	EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &APACharacterPlayer::Look);
 
-	EnhancedInputComponent->BindAction(CrouchAction, ETriggerEvent::Triggered, this, &APACharacterPlayer::StartCrouch);
-	EnhancedInputComponent->BindAction(CrouchAction, ETriggerEvent::Completed, this, &APACharacterPlayer::StopCrouch);
+	EnhancedInputComponent->BindAction(CrouchAction, ETriggerEvent::Started, this, &APACharacterPlayer::ToggleCrouch);
 
 	EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Triggered, this, &APACharacterPlayer::StartSprint);
 	EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Completed, this, &APACharacterPlayer::StopSprint);
@@ -298,27 +297,25 @@ void APACharacterPlayer::StopJumping(const FInputActionValue& Value)
 	}
 }
 
-void APACharacterPlayer::StartCrouch(const FInputActionValue& Value)
-{
-	UE_LOG(LogTemp, Log, TEXT("STartCrouch"));
-	Crouch();
-	bIsCrouched = true;
-	bCanSprint = false;
-}
-
-void APACharacterPlayer::StopCrouch(const FInputActionValue& Value)
-{
-
-	UE_LOG(LogTemp, Log, TEXT("uncrouch"));
-	UnCrouch();
-	
-	bIsCrouched = false;
-	bCanSprint = true;
-}
-
 void APACharacterPlayer::ToggleProne()
 {
 	bIsProning = !bIsProning;
+}
+
+void APACharacterPlayer::ToggleCrouch()
+{
+	if (bIsCrouched == true)
+	{
+		UnCrouch();
+		bIsCrouched = false;
+		bCanSprint = true;
+	}
+	else 
+	{
+		Crouch();
+		bIsCrouched = true;
+		bCanSprint = false;
+	}
 }
 
 void APACharacterPlayer::ProneAnimEnd()
@@ -326,7 +323,6 @@ void APACharacterPlayer::ProneAnimEnd()
 	if (!GetbIsProning())
 	{
 		GetCharacterMovement()->MaxWalkSpeed = GetStatComponent()->GetStandMoveSpeed();
-
 		bCanSprint = true;
 		bCanJump = true;
 
