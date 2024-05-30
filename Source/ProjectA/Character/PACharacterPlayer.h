@@ -96,16 +96,15 @@ protected:
 	void Jump(const FInputActionValue& Value);
 	void StopJumping(const FInputActionValue& Value);
 
-	void StartCrouch(const FInputActionValue& Value);
-	void StopCrouch(const FInputActionValue& Value);
 	
 	void ToggleProne();
+	void ToggleCrouch();
 
 	virtual  void ProneAnimEnd() override;
 	virtual void JumpAnimEnd() override;
 
-	void StartSprint(const FInputActionValue& Value);
-	void StopSprint(const FInputActionValue& Value);
+	void StartSprint();
+	void StopSprint();
 
 
 	ECharacterControlType CurrentCharacterControlType;

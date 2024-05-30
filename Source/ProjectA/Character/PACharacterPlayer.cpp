@@ -38,6 +38,9 @@ APACharacterPlayer::APACharacterPlayer()
 	*/
 	bReplicates = true;
 	
+	
+
+
 
 	// ConstructorHelpers Section
 
@@ -134,10 +137,9 @@ void APACharacterPlayer::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	if(!bIsCrouched)
 	UpdateStamina();
 
-	UE_LOG(LogTemp, Log, TEXT("bcansprint %d"), bCanSprint);
+	//UE_LOG(LogTemp, Log, TEXT("bcansprint %d"), bCanSprint);
 
 }
 
@@ -155,8 +157,7 @@ void APACharacterPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 	EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &APACharacterPlayer::Move);
 	EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &APACharacterPlayer::Look);
 
-	EnhancedInputComponent->BindAction(CrouchAction, ETriggerEvent::Triggered, this, &APACharacterPlayer::StartCrouch);
-	EnhancedInputComponent->BindAction(CrouchAction, ETriggerEvent::Completed, this, &APACharacterPlayer::StopCrouch);
+	EnhancedInputComponent->BindAction(CrouchAction, ETriggerEvent::Started, this, &APACharacterPlayer::ToggleCrouch);
 
 	EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Triggered, this, &APACharacterPlayer::StartSprint);
 	EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Completed, this, &APACharacterPlayer::StopSprint);
@@ -250,6 +251,7 @@ void APACharacterPlayer::Move(const FInputActionValue& Value)
 		AddMovementInput(RightDirection, MovementVector.Y);
 
 	}
+
 }
 
 
@@ -298,27 +300,27 @@ void APACharacterPlayer::StopJumping(const FInputActionValue& Value)
 	}
 }
 
-void APACharacterPlayer::StartCrouch(const FInputActionValue& Value)
-{
-	UE_LOG(LogTemp, Log, TEXT("STartCrouch"));
-	Crouch();
-	bIsCrouched = true;
-	bCanSprint = false;
-}
-
-void APACharacterPlayer::StopCrouch(const FInputActionValue& Value)
-{
-
-	UE_LOG(LogTemp, Log, TEXT("uncrouch"));
-	UnCrouch();
-	
-	bIsCrouched = false;
-	bCanSprint = true;
-}
-
 void APACharacterPlayer::ToggleProne()
 {
 	bIsProning = !bIsProning;
+}
+
+void APACharacterPlayer::ToggleCrouch()
+{
+	if (bIsCrouched == true)
+	{
+		UnCrouch();
+		bIsCrouched = false;
+		bCanSprint = true;
+	}
+	else 
+	{
+		if (bIsSprinting) StopSprint();
+
+		Crouch();
+		bIsCrouched = true;
+		bCanSprint = false;
+	}
 }
 
 void APACharacterPlayer::ProneAnimEnd()
@@ -326,7 +328,6 @@ void APACharacterPlayer::ProneAnimEnd()
 	if (!GetbIsProning())
 	{
 		GetCharacterMovement()->MaxWalkSpeed = GetStatComponent()->GetStandMoveSpeed();
-
 		bCanSprint = true;
 		bCanJump = true;
 
@@ -369,7 +370,7 @@ bool APACharacterPlayer::ServerSetRotationRPC_Validate(FRotator NewRotation)
 
 
 
-void APACharacterPlayer::StartSprint(const FInputActionValue& Value)
+void APACharacterPlayer::StartSprint()
 {
 	
 	if (GetVelocity().Size() <= KINDA_SMALL_NUMBER )
@@ -379,10 +380,10 @@ void APACharacterPlayer::StartSprint(const FInputActionValue& Value)
 		return;
 	}
 
-	UE_LOG(LogTemp, Log, TEXT("stamina %d cansprint %d !bisproning %d !biscrouched %d "), bHasStamina, bCanSprint,! bIsProning, !bIsCrouched);
+	//UE_LOG(LogTemp, Log, TEXT("stamina %d cansprint %d !bisproning %d !biscrouched %d "), bHasStamina, bCanSprint,! bIsProning, !bIsCrouched);
 	if (HasAuthority())
 	{
-		if (bHasStamina && bCanSprint && !bIsProning && !bIsCrouched )
+		if (bHasStamina && bCanSprint && !bIsProning && !bIsCrouched  && GetVelocity().Z == 0)
 		{
 
 			GetCharacterMovement()->MaxWalkSpeed = Stat->GetSprintSpeed();
@@ -397,13 +398,13 @@ void APACharacterPlayer::StartSprint(const FInputActionValue& Value)
 	
 }
 
-void APACharacterPlayer::StopSprint(const FInputActionValue& Value)
+void APACharacterPlayer::StopSprint()
 {
 	// Server logic
 	if (!bIsCrouched && !bIsProning)
 	{
 		GetCharacterMovement()->MaxWalkSpeed = Stat->GetStandMoveSpeed();
-		UE_LOG(LogTemp, Log, TEXT("sprint stop"));
+		//UE_LOG(LogTemp, Log, TEXT("sprint stop"));
 
 		bIsSprinting = false;
 		bCanSprint = true;
@@ -445,7 +446,7 @@ void APACharacterPlayer::ClientSprintMulticastRPC_Implementation()
 void APACharacterPlayer::UpdateStamina()
 {
 	
-		if (bIsSprinting )
+		if (bIsSprinting)
 		{
 			CurrentStamina -= StaminaDrainTime;
 			CurrentRefillDelayTime = DelayBeforeRefill;
@@ -453,6 +454,8 @@ void APACharacterPlayer::UpdateStamina()
 
 		if (!bIsSprinting && CurrentStamina < MaxStamina)
 		{
+			UE_LOG(LogTemp, Log, TEXT("!bIsSprinting %d"), !bIsSprinting);
+
 			CurrentRefillDelayTime--;
 			if (CurrentRefillDelayTime <= KINDA_SMALL_NUMBER)
 			{
@@ -464,7 +467,7 @@ void APACharacterPlayer::UpdateStamina()
 		{
 			bHasStamina = false;
 			bCanSprint = false;
-			StopSprint(0.0f);
+			StopSprint();
 		}
 		else if (CurrentStamina > 300.0f)
 		{
