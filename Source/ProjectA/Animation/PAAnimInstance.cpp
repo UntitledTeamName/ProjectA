@@ -39,9 +39,10 @@ void UPAAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 		bIsProning = Owner->GetbIsProning();
 		bIsAiming = Owner->GetbIsAiming();
 		//Pitch = Owner->GetBaseAimRotation().Pitch;
+		
 
 		//UE_LOG(LogTemp, Log, TEXT("bisRunning  = %d"), bIsRunning);
-		//UE_LOG(LogTemp, Log, TEXT("velocity = %f , Speed = %f"), Owner->GetVelocity().Z, Speed);
+		UE_LOG(LogTemp, Log, TEXT("velocity = %f , Speed = %f"), Owner->GetVelocity().Z, Speed);
 	}
 	
 }

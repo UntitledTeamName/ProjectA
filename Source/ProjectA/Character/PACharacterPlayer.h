@@ -103,8 +103,8 @@ protected:
 	virtual  void ProneAnimEnd() override;
 	virtual void JumpAnimEnd() override;
 
-	void StartSprint(const FInputActionValue& Value);
-	void StopSprint(const FInputActionValue& Value);
+	void StartSprint();
+	void StopSprint();
 
 
 	ECharacterControlType CurrentCharacterControlType;

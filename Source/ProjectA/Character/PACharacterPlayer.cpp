@@ -38,6 +38,9 @@ APACharacterPlayer::APACharacterPlayer()
 	*/
 	bReplicates = true;
 	
+	
+
+
 
 	// ConstructorHelpers Section
 
@@ -134,10 +137,9 @@ void APACharacterPlayer::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	if(!bIsCrouched)
 	UpdateStamina();
 
-	UE_LOG(LogTemp, Log, TEXT("bcansprint %d"), bCanSprint);
+	//UE_LOG(LogTemp, Log, TEXT("bcansprint %d"), bCanSprint);
 
 }
 
@@ -249,6 +251,7 @@ void APACharacterPlayer::Move(const FInputActionValue& Value)
 		AddMovementInput(RightDirection, MovementVector.Y);
 
 	}
+
 }
 
 
@@ -312,6 +315,8 @@ void APACharacterPlayer::ToggleCrouch()
 	}
 	else 
 	{
+		if (bIsSprinting) StopSprint();
+
 		Crouch();
 		bIsCrouched = true;
 		bCanSprint = false;
@@ -365,7 +370,7 @@ bool APACharacterPlayer::ServerSetRotationRPC_Validate(FRotator NewRotation)
 
 
 
-void APACharacterPlayer::StartSprint(const FInputActionValue& Value)
+void APACharacterPlayer::StartSprint()
 {
 	
 	if (GetVelocity().Size() <= KINDA_SMALL_NUMBER )
@@ -375,10 +380,10 @@ void APACharacterPlayer::StartSprint(const FInputActionValue& Value)
 		return;
 	}
 
-	UE_LOG(LogTemp, Log, TEXT("stamina %d cansprint %d !bisproning %d !biscrouched %d "), bHasStamina, bCanSprint,! bIsProning, !bIsCrouched);
+	//UE_LOG(LogTemp, Log, TEXT("stamina %d cansprint %d !bisproning %d !biscrouched %d "), bHasStamina, bCanSprint,! bIsProning, !bIsCrouched);
 	if (HasAuthority())
 	{
-		if (bHasStamina && bCanSprint && !bIsProning && !bIsCrouched )
+		if (bHasStamina && bCanSprint && !bIsProning && !bIsCrouched  && GetVelocity().Z == 0)
 		{
 
 			GetCharacterMovement()->MaxWalkSpeed = Stat->GetSprintSpeed();
@@ -393,13 +398,13 @@ void APACharacterPlayer::StartSprint(const FInputActionValue& Value)
 	
 }
 
-void APACharacterPlayer::StopSprint(const FInputActionValue& Value)
+void APACharacterPlayer::StopSprint()
 {
 	// Server logic
 	if (!bIsCrouched && !bIsProning)
 	{
 		GetCharacterMovement()->MaxWalkSpeed = Stat->GetStandMoveSpeed();
-		UE_LOG(LogTemp, Log, TEXT("sprint stop"));
+		//UE_LOG(LogTemp, Log, TEXT("sprint stop"));
 
 		bIsSprinting = false;
 		bCanSprint = true;
@@ -441,7 +446,7 @@ void APACharacterPlayer::ClientSprintMulticastRPC_Implementation()
 void APACharacterPlayer::UpdateStamina()
 {
 	
-		if (bIsSprinting )
+		if (bIsSprinting)
 		{
 			CurrentStamina -= StaminaDrainTime;
 			CurrentRefillDelayTime = DelayBeforeRefill;
@@ -449,6 +454,8 @@ void APACharacterPlayer::UpdateStamina()
 
 		if (!bIsSprinting && CurrentStamina < MaxStamina)
 		{
+			UE_LOG(LogTemp, Log, TEXT("!bIsSprinting %d"), !bIsSprinting);
+
 			CurrentRefillDelayTime--;
 			if (CurrentRefillDelayTime <= KINDA_SMALL_NUMBER)
 			{
@@ -460,7 +467,7 @@ void APACharacterPlayer::UpdateStamina()
 		{
 			bHasStamina = false;
 			bCanSprint = false;
-			StopSprint(0.0f);
+			StopSprint();
 		}
 		else if (CurrentStamina > 300.0f)
 		{
