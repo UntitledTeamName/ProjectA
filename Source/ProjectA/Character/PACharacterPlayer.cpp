@@ -2,14 +2,18 @@
 
 
 #include "Character/PACharacterPlayer.h"
+
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
-#include "Components/PACharacterStatComponent.h"
 #include "InputMappingContext.h"
-#include "Character/PACharacterControlData.h"
 #include "EnhancedInputComponent.h"
+
+#include "Character/PACharacterControlData.h"
+
+#include "Components/PACharacterStatComponent.h"
 #include "Components/WidgetComponent.h"
+
 #include "Animation/PAAnimInstance.h"
 #include "EnhancedInputSubsystems.h"
 #include "Player/PAPlayerController.h"
@@ -38,9 +42,6 @@ APACharacterPlayer::APACharacterPlayer()
 	*/
 	bReplicates = true;
 	
-	
-
-
 
 	// ConstructorHelpers Section
 
@@ -79,7 +80,7 @@ APACharacterPlayer::APACharacterPlayer()
 	{
 		ProneAction = ProneActionRef.Object;
 	}
-
+	/*
 	static ConstructorHelpers::FObjectFinder<USkeletalMesh> RifleMeshRef(TEXT("/Game/ProjectA/Resource/MilitaryWeapDark/Weapons/Assault_Rifle_B.Assault_Rifle_B"));
 	if (RifleMeshRef.Succeeded())
 	{
@@ -90,7 +91,7 @@ APACharacterPlayer::APACharacterPlayer()
 		RifleMesh->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, TEXT("Weapon_Socket"));
 
 	}
-
+	*/
 
 	static ConstructorHelpers::FObjectFinder<UPACharacterControlData> ThirdPersonDataRef(TEXT("/Script/ProjectA.PACharacterControlData'/Game/ProjectA/CharacterControl/PAC_ThirdPerson.PAC_ThirdPerson'"));
 	if (ThirdPersonDataRef.Object)
@@ -136,6 +137,7 @@ void APACharacterPlayer::BeginPlay()
 void APACharacterPlayer::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
 
 	UpdateStamina();
 
@@ -302,11 +304,24 @@ void APACharacterPlayer::StopJumping(const FInputActionValue& Value)
 
 void APACharacterPlayer::ToggleProne()
 {
-	bIsProning = !bIsProning;
+	if (bIsCrouched) return;
+
+	if (bIsProning == false)
+	{
+		bIsProning = true;
+
+	}
+	else
+	{
+		bIsProning = false;
+
+	}
 }
 
 void APACharacterPlayer::ToggleCrouch()
 {
+	if (bIsProning) return;
+
 	if (bIsCrouched == true)
 	{
 		UnCrouch();
@@ -316,7 +331,8 @@ void APACharacterPlayer::ToggleCrouch()
 	else 
 	{
 		if (bIsSprinting) StopSprint();
-
+		
+		
 		Crouch();
 		bIsCrouched = true;
 		bCanSprint = false;

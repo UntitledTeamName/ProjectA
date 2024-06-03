@@ -133,7 +133,7 @@ protected:
 	UPROPERTY(BlueprintReadOnly)
 	bool bIsSprinting;
 
-	UPROPERTY(BlueprintReadOnly)
+	UPROPERTY(BlueprintReadOnly, Replicated)
 	bool bIsProning;
 
 	UPROPERTY()

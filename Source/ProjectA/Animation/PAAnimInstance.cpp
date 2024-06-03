@@ -8,7 +8,7 @@
 
 UPAAnimInstance::UPAAnimInstance()
 {
-	bHasRifle = true;
+	bHasRifle = false;
 
 }
 
